@@ -72,6 +72,7 @@
         } else {
           node.className = "on";
         }
+        saveStateToCookie();
       }
       function generateNum() {
         var j = document.getElementsByClassName("off");
@@ -79,116 +80,160 @@
         document.getElementById("bingonum").innerHTML =
           j[randomNumber].innerHTML;
         j[randomNumber].className = "on";
+        saveStateToCookie();
+      }
+
+      function getStateFromCookie() {
+        let name = "state=";
+        let decodedCookie = decodeURIComponent(document.cookie);
+        let ca = decodedCookie.split(";");
+        for (let i = 0; i < ca.length; i++) {
+          let c = ca[i];
+          while (c.charAt(0) == " ") {
+            c = c.substring(1);
+          }
+          if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+          }
+        }
+        return "";
+      }
+      function saveStateToCookie() {
+        var state = Array.from(document.getElementsByClassName("on"))
+          .map((el) => el.innerText)
+          .join(",");
+        document.cookie = "state=" + state;
+      }
+      function loadStateFromCookie() {
+        var set = new Set(getStateFromCookie().split(","));
+        var els = Array.from(document.getElementsByClassName("on")).concat(
+          Array.from(document.getElementsByClassName("off"))
+        );
+        for (var el of els) {
+          if (set.has(el.innerText)) {
+            el.className = "on";
+          } else {
+            el.className = "off";
+          }
+        }
+        return set;
       }
     </script>
   </head>
   <body>
     <h1>BINGO</h1>
-    <table cellpadding="10" style="float: left; width: 60%">
-      <tr>
-        <td class="off" onclick="Change(this)">1</td>
-        <td class="off" onclick="Change(this)">2</td>
-        <td class="off" onclick="Change(this)">3</td>
-        <td class="off" onclick="Change(this)">4</td>
-        <td class="off" onclick="Change(this)">5</td>
-        <td class="off" onclick="Change(this)">6</td>
-        <td class="off" onclick="Change(this)">7</td>
-        <td class="off" onclick="Change(this)">8</td>
-        <td class="off" onclick="Change(this)">9</td>
-        <td class="off" onclick="Change(this)">10</td>
-      </tr>
-      <tr>
-        <td class="off" onclick="Change(this)">11</td>
-        <td class="off" onclick="Change(this)">12</td>
-        <td class="off" onclick="Change(this)">13</td>
-        <td class="off" onclick="Change(this)">14</td>
-        <td class="off" onclick="Change(this)">15</td>
-        <td class="off" onclick="Change(this)">16</td>
-        <td class="off" onclick="Change(this)">17</td>
-        <td class="off" onclick="Change(this)">18</td>
-        <td class="off" onclick="Change(this)">19</td>
-        <td class="off" onclick="Change(this)">20</td>
-      </tr>
-      <tr>
-        <td class="off" onclick="Change(this)">21</td>
-        <td class="off" onclick="Change(this)">22</td>
-        <td class="off" onclick="Change(this)">23</td>
-        <td class="off" onclick="Change(this)">24</td>
-        <td class="off" onclick="Change(this)">25</td>
-        <td class="off" onclick="Change(this)">26</td>
-        <td class="off" onclick="Change(this)">27</td>
-        <td class="off" onclick="Change(this)">28</td>
-        <td class="off" onclick="Change(this)">29</td>
-        <td class="off" onclick="Change(this)">30</td>
-      </tr>
-      <tr>
-        <td class="off" onclick="Change(this)">31</td>
-        <td class="off" onclick="Change(this)">32</td>
-        <td class="off" onclick="Change(this)">33</td>
-        <td class="off" onclick="Change(this)">34</td>
-        <td class="off" onclick="Change(this)">35</td>
-        <td class="off" onclick="Change(this)">36</td>
-        <td class="off" onclick="Change(this)">37</td>
-        <td class="off" onclick="Change(this)">38</td>
-        <td class="off" onclick="Change(this)">39</td>
-        <td class="off" onclick="Change(this)">40</td>
-      </tr>
-      <tr>
-        <td class="off" onclick="Change(this)">41</td>
-        <td class="off" onclick="Change(this)">42</td>
-        <td class="off" onclick="Change(this)">43</td>
-        <td class="off" onclick="Change(this)">44</td>
-        <td class="off" onclick="Change(this)">45</td>
-        <td class="off" onclick="Change(this)">46</td>
-        <td class="off" onclick="Change(this)">47</td>
-        <td class="off" onclick="Change(this)">48</td>
-        <td class="off" onclick="Change(this)">49</td>
-        <td class="off" onclick="Change(this)">50</td>
-      </tr>
-      <tr>
-        <td class="off" onclick="Change(this)">51</td>
-        <td class="off" onclick="Change(this)">52</td>
-        <td class="off" onclick="Change(this)">53</td>
-        <td class="off" onclick="Change(this)">54</td>
-        <td class="off" onclick="Change(this)">55</td>
-        <td class="off" onclick="Change(this)">56</td>
-        <td class="off" onclick="Change(this)">57</td>
-        <td class="off" onclick="Change(this)">58</td>
-        <td class="off" onclick="Change(this)">59</td>
-        <td class="off" onclick="Change(this)">60</td>
-      </tr>
-      <tr>
-        <td class="off" onclick="Change(this)">61</td>
-        <td class="off" onclick="Change(this)">62</td>
-        <td class="off" onclick="Change(this)">63</td>
-        <td class="off" onclick="Change(this)">64</td>
-        <td class="off" onclick="Change(this)">65</td>
-        <td class="off" onclick="Change(this)">66</td>
-        <td class="off" onclick="Change(this)">67</td>
-        <td class="off" onclick="Change(this)">68</td>
-        <td class="off" onclick="Change(this)">69</td>
-        <td class="off" onclick="Change(this)">70</td>
-      </tr>
-      <tr>
-        <td class="off" onclick="Change(this)">71</td>
-        <td class="off" onclick="Change(this)">72</td>
-        <td class="off" onclick="Change(this)">73</td>
-        <td class="off" onclick="Change(this)">74</td>
-        <td class="off" onclick="Change(this)">75</td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-      </tr>
-    </table>
-    <div style="float: right; width: 25%; text-align: center">
-      <br /><br />
-      <button class="button button2" onclick="generateNum()">
-        Generate Number
-      </button>
-      <br /><br />
-      <div class="text1" id="bingonum"></div>
+    <div>
+      <div style="float: left; width: 60%">
+        <table cellpadding="10" style="width: 100%">
+          <tr>
+            <td class="off" onclick="Change(this)">1</td>
+            <td class="off" onclick="Change(this)">2</td>
+            <td class="off" onclick="Change(this)">3</td>
+            <td class="off" onclick="Change(this)">4</td>
+            <td class="off" onclick="Change(this)">5</td>
+            <td class="off" onclick="Change(this)">6</td>
+            <td class="off" onclick="Change(this)">7</td>
+            <td class="off" onclick="Change(this)">8</td>
+            <td class="off" onclick="Change(this)">9</td>
+            <td class="off" onclick="Change(this)">10</td>
+          </tr>
+          <tr>
+            <td class="off" onclick="Change(this)">11</td>
+            <td class="off" onclick="Change(this)">12</td>
+            <td class="off" onclick="Change(this)">13</td>
+            <td class="off" onclick="Change(this)">14</td>
+            <td class="off" onclick="Change(this)">15</td>
+            <td class="off" onclick="Change(this)">16</td>
+            <td class="off" onclick="Change(this)">17</td>
+            <td class="off" onclick="Change(this)">18</td>
+            <td class="off" onclick="Change(this)">19</td>
+            <td class="off" onclick="Change(this)">20</td>
+          </tr>
+          <tr>
+            <td class="off" onclick="Change(this)">21</td>
+            <td class="off" onclick="Change(this)">22</td>
+            <td class="off" onclick="Change(this)">23</td>
+            <td class="off" onclick="Change(this)">24</td>
+            <td class="off" onclick="Change(this)">25</td>
+            <td class="off" onclick="Change(this)">26</td>
+            <td class="off" onclick="Change(this)">27</td>
+            <td class="off" onclick="Change(this)">28</td>
+            <td class="off" onclick="Change(this)">29</td>
+            <td class="off" onclick="Change(this)">30</td>
+          </tr>
+          <tr>
+            <td class="off" onclick="Change(this)">31</td>
+            <td class="off" onclick="Change(this)">32</td>
+            <td class="off" onclick="Change(this)">33</td>
+            <td class="off" onclick="Change(this)">34</td>
+            <td class="off" onclick="Change(this)">35</td>
+            <td class="off" onclick="Change(this)">36</td>
+            <td class="off" onclick="Change(this)">37</td>
+            <td class="off" onclick="Change(this)">38</td>
+            <td class="off" onclick="Change(this)">39</td>
+            <td class="off" onclick="Change(this)">40</td>
+          </tr>
+          <tr>
+            <td class="off" onclick="Change(this)">41</td>
+            <td class="off" onclick="Change(this)">42</td>
+            <td class="off" onclick="Change(this)">43</td>
+            <td class="off" onclick="Change(this)">44</td>
+            <td class="off" onclick="Change(this)">45</td>
+            <td class="off" onclick="Change(this)">46</td>
+            <td class="off" onclick="Change(this)">47</td>
+            <td class="off" onclick="Change(this)">48</td>
+            <td class="off" onclick="Change(this)">49</td>
+            <td class="off" onclick="Change(this)">50</td>
+          </tr>
+          <tr>
+            <td class="off" onclick="Change(this)">51</td>
+            <td class="off" onclick="Change(this)">52</td>
+            <td class="off" onclick="Change(this)">53</td>
+            <td class="off" onclick="Change(this)">54</td>
+            <td class="off" onclick="Change(this)">55</td>
+            <td class="off" onclick="Change(this)">56</td>
+            <td class="off" onclick="Change(this)">57</td>
+            <td class="off" onclick="Change(this)">58</td>
+            <td class="off" onclick="Change(this)">59</td>
+            <td class="off" onclick="Change(this)">60</td>
+          </tr>
+          <tr>
+            <td class="off" onclick="Change(this)">61</td>
+            <td class="off" onclick="Change(this)">62</td>
+            <td class="off" onclick="Change(this)">63</td>
+            <td class="off" onclick="Change(this)">64</td>
+            <td class="off" onclick="Change(this)">65</td>
+            <td class="off" onclick="Change(this)">66</td>
+            <td class="off" onclick="Change(this)">67</td>
+            <td class="off" onclick="Change(this)">68</td>
+            <td class="off" onclick="Change(this)">69</td>
+            <td class="off" onclick="Change(this)">70</td>
+          </tr>
+          <tr>
+            <td class="off" onclick="Change(this)">71</td>
+            <td class="off" onclick="Change(this)">72</td>
+            <td class="off" onclick="Change(this)">73</td>
+            <td class="off" onclick="Change(this)">74</td>
+            <td class="off" onclick="Change(this)">75</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </table>
+        <div style="margin-top: 100px">
+          <button onclick="loadStateFromCookie()">Load Save</button>
+        </div>
+      </div>
+      <div style="float: right; width: 25%; text-align: center">
+        <br /><br />
+        <button class="button button2" onclick="generateNum()">
+          Generate Number
+        </button>
+        <br /><br />
+        <div class="text1" id="bingonum"></div>
+      </div>
     </div>
   </body>
 </html>
