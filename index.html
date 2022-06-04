@@ -1,0 +1,199 @@
+<!-- Bingo number generator developed by Lim Min & Ng Bee Yong, Copyright 2017, Singapore -->
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+table, th, td {
+    border: 1px solid black;
+    font-size:40px;
+    font-weight: bold;
+    font-family:"Arial";
+    text-align: center;
+    vertical-align: middle;
+}
+.on{
+
+    background-color:yellow;
+}
+.button {
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 15px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 30px;
+    margin: 4px 2px;
+    cursor: pointer;
+    -webkit-transition-duration: 0.4s; /* Safari */
+    transition-duration: 0.4s;
+}
+.button2:hover {
+    box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+}
+.shadow {
+  color: #000;
+  font-family: Book Antiqua; /*Arvo */
+  font-weight: bold;
+  text-shadow:
+    -3px -3px 0 #222,
+    3px -3px 0 #222,
+    -3px 3px 0 #222,
+    3px 3px 0 #222,
+    4px 4px 0 #000,
+    5px 5px 0 #000,
+    6px 6px 0 #000,
+    7px 7px 0 #000;
+  line-height: 0.8em;
+  letter-spacing: 0.1em;
+  transform: scaleY(0.7);
+  -webkit-transform: scaleY(0.7);
+  -moz-transform: scaleY(0.7);
+  margin:0;
+  text-align: center;
+}
+.text1 {
+  font-size: 250px;
+  font-family: Book Antiqua; /*Arvo */
+  font-weight: bold;
+}
+h1 { 
+    display: block;
+	text-align: center;
+    font-size: 2em;
+    margin-top: 0.67em;
+    margin-bottom: 0.67em;
+    margin-left: 0;
+    margin-right: 0;
+    font-weight: bold;
+}
+</style>
+<script>
+function Change(node){
+
+  if (node.className=="on") {
+    node.className="off";
+  }else{
+    node.className="on";  
+  }
+}
+function generateNum(){
+  var j=document.getElementsByClassName("off");
+  var randomNumber = Math.floor(Math.random() * j.length);
+  document.getElementById("bingonum").innerHTML = j[randomNumber].innerHTML;
+  j[randomNumber].className="on";  
+}
+</script>
+</head>
+<body>
+<h1>BINGO</h1>
+<table cellpadding="10" style="float: left; width: 60%;">
+  <tr>
+    <td class="off" onclick="Change(this)">1</td>
+    <td class="off" onclick="Change(this)">2</td>
+    <td class="off" onclick="Change(this)">3</td>
+    <td class="off" onclick="Change(this)">4</td>
+    <td class="off" onclick="Change(this)">5</td>
+    <td class="off" onclick="Change(this)">6</td>
+    <td class="off" onclick="Change(this)">7</td>
+    <td class="off" onclick="Change(this)">8</td>
+    <td class="off" onclick="Change(this)">9</td>
+    <td class="off" onclick="Change(this)">10</td>
+  </tr>
+  <tr>
+    <td class="off" onclick="Change(this)">11</td>
+    <td class="off" onclick="Change(this)">12</td>
+    <td class="off" onclick="Change(this)">13</td>
+    <td class="off" onclick="Change(this)">14</td>
+    <td class="off" onclick="Change(this)">15</td>
+    <td class="off" onclick="Change(this)">16</td>
+    <td class="off" onclick="Change(this)">17</td>
+    <td class="off" onclick="Change(this)">18</td>
+    <td class="off" onclick="Change(this)">19</td>
+    <td class="off" onclick="Change(this)">20</td>
+  </tr>
+  <tr>
+    <td class="off" onclick="Change(this)">21</td>
+    <td class="off" onclick="Change(this)">22</td>
+    <td class="off" onclick="Change(this)">23</td>
+    <td class="off" onclick="Change(this)">24</td>
+    <td class="off" onclick="Change(this)">25</td>
+    <td class="off" onclick="Change(this)">26</td>
+    <td class="off" onclick="Change(this)">27</td>
+    <td class="off" onclick="Change(this)">28</td>
+    <td class="off" onclick="Change(this)">29</td>
+    <td class="off" onclick="Change(this)">30</td>
+  </tr>
+  <tr>
+    <td class="off" onclick="Change(this)">31</td>
+    <td class="off" onclick="Change(this)">32</td>
+    <td class="off" onclick="Change(this)">33</td>
+    <td class="off" onclick="Change(this)">34</td>
+    <td class="off" onclick="Change(this)">35</td>
+    <td class="off" onclick="Change(this)">36</td>
+    <td class="off" onclick="Change(this)">37</td>
+    <td class="off" onclick="Change(this)">38</td>
+    <td class="off" onclick="Change(this)">39</td>
+    <td class="off" onclick="Change(this)">40</td>
+  </tr>
+  <tr>
+    <td class="off" onclick="Change(this)">41</td>
+    <td class="off" onclick="Change(this)">42</td>
+    <td class="off" onclick="Change(this)">43</td>
+    <td class="off" onclick="Change(this)">44</td>
+    <td class="off" onclick="Change(this)">45</td>
+    <td class="off" onclick="Change(this)">46</td>
+    <td class="off" onclick="Change(this)">47</td>
+    <td class="off" onclick="Change(this)">48</td>
+    <td class="off" onclick="Change(this)">49</td>
+    <td class="off" onclick="Change(this)">50</td>
+  </tr>
+  <tr>
+    <td class="off" onclick="Change(this)">51</td>
+    <td class="off" onclick="Change(this)">52</td>
+    <td class="off" onclick="Change(this)">53</td>
+    <td class="off" onclick="Change(this)">54</td>
+    <td class="off" onclick="Change(this)">55</td>
+    <td class="off" onclick="Change(this)">56</td>
+    <td class="off" onclick="Change(this)">57</td>
+    <td class="off" onclick="Change(this)">58</td>
+    <td class="off" onclick="Change(this)">59</td>
+    <td class="off" onclick="Change(this)">60</td>
+  </tr>
+  <tr>
+    <td class="off" onclick="Change(this)">61</td>
+    <td class="off" onclick="Change(this)">62</td>
+    <td class="off" onclick="Change(this)">63</td>
+    <td class="off" onclick="Change(this)">64</td>
+    <td class="off" onclick="Change(this)">65</td>
+    <td class="off" onclick="Change(this)">66</td>
+    <td class="off" onclick="Change(this)">67</td>
+    <td class="off" onclick="Change(this)">68</td>
+    <td class="off" onclick="Change(this)">69</td>
+    <td class="off" onclick="Change(this)">70</td>
+  </tr>
+  <tr>
+    <td class="off" onclick="Change(this)">71</td>
+    <td class="off" onclick="Change(this)">72</td>
+    <td class="off" onclick="Change(this)">73</td>
+    <td class="off" onclick="Change(this)">74</td>
+    <td class="off" onclick="Change(this)">75</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+</table>
+<div style="float: right; width: 25%; text-align: center;">
+  <br><br>
+  <button class="button button2" onclick="generateNum()">
+    Generate Number
+  </button>
+  <br><br>
+  <div class="text1" id="bingonum">
+  </div>
+</div>
+</body>
+</html>
