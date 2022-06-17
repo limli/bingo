@@ -1,0 +1,76 @@
+<!-- Guess high low game developed by Lim Li & Ng Bee Yong, Copyright 2017, Singapore -->
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+
+.card {
+	border: black;
+    width: 150px;
+	height: 180px;
+    border-width: thick;
+    border-style: solid;
+	background-image: url("guesshighlow.png");
+    font-size: 180px;
+    text-align: center;
+	float: left;
+	margin: 10px;
+}
+.btn {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 10px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+    font-size: 20px;
+}
+.row{
+	clear: both;
+	display: table;
+	margin-right: auto;
+	margin-left: auto;
+}
+</style>
+</head>
+<body>
+<div class="row">
+<div id="card5" class="card" onclick="hi(5)"></div>
+</div>
+<div class="row">
+<div id="card3" class="card" onclick="hi(3)"></div>
+<div id="card4" class="card" onclick="hi(4)"></div>
+</div>
+<div class="row">
+<div id="card0" class="card" onclick="hi(0)"></div>
+<div id="card1" class="card" onclick="hi(1)"></div>
+<div id="card2" class="card" onclick="hi(2)"></div>
+</div>
+<script>
+function hi(n){
+	var mydiv=document.getElementById("card".concat(n));
+	var prediv=document.getElementById("card".concat(n-1));
+	var pre=0;
+	if(prediv!=null){
+		pre=prediv.textContent;
+	}
+	mydiv.style.backgroundImage="none";
+	var randNum;
+	do{
+		randNum=Math.floor(1+Math.random()*9);
+	}while(randNum==pre);
+	mydiv.textContent=randNum;
+}
+function reset(){
+	for(i=0;i<6;i++){
+		document.getElementById("card".concat(i)).style.backgroundImage="url(\"back.png\")";
+		document.getElementById("card".concat(i)).textContent="";
+	}
+}
+</script>
+
+
+
+</body></html>
