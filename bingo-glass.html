@@ -158,7 +158,14 @@
     .board { flex: 1 1 auto; min-height: 0; grid-template-rows: repeat(15, minmax(0, 1fr)); gap: 6px; }
     .cell { padding: 0; min-height: 0; }
     .footer { margin-top: 8px; }
-    .stage > .panel:not(.board-panel) { overflow: auto; }  /* right column scrolls if a short viewport can't fit it */
+    /* right column fits the stage height — focal card scales to viewport so nothing scrolls */
+    .stage > .panel:not(.board-panel) { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+    .reveal { gap: 14px; }
+    .card-flip { width: min(44vw, 24vh, 240px); height: min(52vw, 30vh, 290px); }
+    .face .big { font-size: min(15vh, 128px); }
+    .face .card-letter { font-size: min(4.6vh, 40px); }
+    .stats { margin-top: 12px; }
+    .history-label { margin: 12px 0 6px; }
   }
 </style>
 </head>

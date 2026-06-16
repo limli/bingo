@@ -181,7 +181,14 @@
     .board { flex: 1 1 auto; min-height: 0; grid-template-rows: repeat(15, minmax(0, 1fr)); gap: 5px; }
     .cell { padding: 0; min-height: 0; }
     .footer { margin-top: 8px; }
-    .stage > .panel:not(.board-panel) { overflow: auto; }  /* right column scrolls if a short viewport can't fit it */
+    /* right column fits the stage height — focal ball scales to viewport so nothing scrolls */
+    .stage > .panel:not(.board-panel) { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+    .ball-stage { gap: 12px; }
+    .ball { width: min(42vw, 23vh, 260px); height: min(42vw, 23vh, 260px); }
+    .ball .num { font-size: min(13vh, 116px); }
+    .ball .ball-letter { font-size: min(4.6vh, 42px); }
+    .stats { margin-top: 12px; }
+    .history-label { margin: 12px 0 6px; }
   }
 </style>
 </head>
