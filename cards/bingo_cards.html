@@ -1,0 +1,4305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BINGO NIGHT · Bingo Cards</title>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Playfair+Display:wght@700;800;900&display=swap');
+
+  :root {
+    --ink: #1d2330;
+    --paper: #ffffff;
+    --b: #e0294b; --i: #1f7ae0; --n: #15a37f; --g: #e8a200; --o: #7b3ff2;
+  }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  html, body {
+    margin: 0; padding: 0;
+    font-family: "Fredoka", "Segoe UI", system-ui, sans-serif;
+    color: var(--ink);
+    background: #d7dae2;            /* desk colour around the sheets (screen only) */
+  }
+
+  /* one printed sheet = two cards */
+  .page {
+    width: 210mm; height: 297mm;
+    margin: 10mm auto;             /* screen spacing; collapses in print */
+    padding: 11mm 12mm;
+    background: var(--paper);
+    box-shadow: 0 6px 26px rgba(0,0,0,.22);
+    display: flex; flex-direction: column;
+    gap: 9mm;
+  }
+
+  /* dashed fold/cut guide between the two cards */
+  .cutline {
+    border: none; border-top: 1.3px dashed #b8bcc8;
+    position: relative; margin: 0;
+  }
+  .cutline::after {
+    content: "\2702"; position: absolute; left: -2mm; top: -8px;
+    font-size: 13px; color: #b8bcc8;
+  }
+
+  /* ------------------------------- card -------------------------------- */
+  .card {
+    flex: 1; position: relative; overflow: hidden;
+    border-radius: 16px; padding: 7mm 7mm 6mm;
+    background:
+      radial-gradient(120% 90% at 0% 0%, #ffffff 0%, #fbfbff 55%, #f4f5fb 100%);
+    border: 2px solid #e7e9f2;
+    box-shadow: inset 0 0 0 6px #ffffff, inset 0 0 0 7px #ececf4,
+                0 2px 10px rgba(20,24,40,.06);
+    display: flex; flex-direction: column;
+  }
+  /* gilt corner flourishes (card-suit motif) */
+  .card .suit {
+    position: absolute; font-size: 30px; opacity: .10; line-height: 1; user-select: none;
+  }
+  .card .suit.tl { top: 6px; left: 10px; }
+  .card .suit.tr { top: 6px; right: 10px; }
+  .card .suit.bl { bottom: 6px; left: 10px; }
+  .card .suit.br { bottom: 6px; right: 10px; }
+
+  /* header band */
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 5mm;
+  }
+  .event {
+    font-family: "Playfair Display", Georgia, serif;
+    font-weight: 800; font-size: 15px; letter-spacing: .14em;
+    color: #2a3142; text-transform: uppercase;
+  }
+  .serial {
+    font-size: 11px; letter-spacing: .12em; color: #8a90a2;
+    border: 1.5px solid #e2e4ee; border-radius: 999px; padding: 3px 11px;
+    font-weight: 600;
+  }
+
+  /* BINGO letter row */
+  .letters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 6px; }
+  .letters .lt {
+    text-align: center; color: #fff; font-weight: 700;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 34px; line-height: 1.35; border-radius: 12px;
+    box-shadow: 0 3px 0 rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.4);
+  }
+  .lt.b { background: linear-gradient(180deg,#f0567a,var(--b)); }
+  .lt.i { background: linear-gradient(180deg,#5aa0ee,var(--i)); }
+  .lt.n { background: linear-gradient(180deg,#3cc6a3,var(--n)); }
+  .lt.g { background: linear-gradient(180deg,#f5c24a,var(--g)); }
+  .lt.o { background: linear-gradient(180deg,#a274f6,var(--o)); }
+
+  /* number grid */
+  .grid {
+    flex: 1; display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    grid-auto-flow: column; gap: 6px;
+  }
+  .cell {
+    position: relative; display: grid; place-items: center;
+    background: #fff; border-radius: 11px;
+    border: 1.5px solid #e9ebf3;
+    font-size: 40px; font-weight: 600; color: #232a3a;
+    box-shadow: 0 1px 2px rgba(20,24,40,.05);
+  }
+  /* thin colour key per column, top edge */
+  .cell::before {
+    content: ""; position: absolute; top: 6px; left: 18%; right: 18%; height: 3px;
+    border-radius: 3px; background: var(--c); opacity: .85;
+  }
+  .cell.b { --c: var(--b); } .cell.i { --c: var(--i); } .cell.n { --c: var(--n); }
+  .cell.g { --c: var(--g); } .cell.o { --c: var(--o); }
+
+  /* FREE centre */
+  .cell.free { border: none; background: transparent; box-shadow: none; }
+  .cell.free::before { display: none; }
+  .free-badge {
+    width: 86%; height: 86%; border-radius: 50%;
+    display: grid; place-items: center; align-content: center;
+    background: radial-gradient(circle at 35% 30%, #fff 0%, #ffe9a8 30%, #f4b400 75%, #d98f00 100%);
+    box-shadow: 0 3px 10px rgba(217,143,0,.4), inset 0 2px 6px rgba(255,255,255,.6);
+    color: #6a3d00;
+  }
+  .free-badge .star { font-size: 28px; line-height: .8; }
+  .free-badge .word { font-size: 15px; font-weight: 700; letter-spacing: .12em; }
+
+  /* footer */
+  .card-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 5mm; font-size: 11px; color: #9095a6; letter-spacing: .06em;
+  }
+  .card-foot .tag { font-style: italic; }
+  .card-foot .dots { color: #d4d7e2; letter-spacing: 2px; }
+
+  /* --------------------------- print rules ---------------------------- */
+  @page { size: A4 portrait; margin: 0; }
+  @media print {
+    html, body { background: #fff; }
+    .page {
+      margin: 0; box-shadow: none;
+      page-break-after: always; break-after: page;
+    }
+    .page:last-child { page-break-after: auto; break-after: auto; }
+    .card { box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 7px #ececf4; }
+  }
+</style>
+
+</head>
+<body>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 001</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">10</div>
+      <div class="cell b">9</div>
+      <div class="cell b">12</div>
+      <div class="cell b">6</div>
+      <div class="cell b">15</div>
+      <div class="cell i">25</div>
+      <div class="cell i">27</div>
+      <div class="cell i">18</div>
+      <div class="cell i">21</div>
+      <div class="cell i">22</div>
+      <div class="cell n">41</div>
+      <div class="cell n">43</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">36</div>
+      <div class="cell n">35</div>
+      <div class="cell g">52</div>
+      <div class="cell g">57</div>
+      <div class="cell g">49</div>
+      <div class="cell g">56</div>
+      <div class="cell g">51</div>
+      <div class="cell o">62</div>
+      <div class="cell o">67</div>
+      <div class="cell o">71</div>
+      <div class="cell o">74</div>
+      <div class="cell o">75</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 002</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">9</div>
+      <div class="cell b">12</div>
+      <div class="cell b">11</div>
+      <div class="cell b">6</div>
+      <div class="cell b">7</div>
+      <div class="cell i">22</div>
+      <div class="cell i">28</div>
+      <div class="cell i">27</div>
+      <div class="cell i">20</div>
+      <div class="cell i">26</div>
+      <div class="cell n">31</div>
+      <div class="cell n">44</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">36</div>
+      <div class="cell n">40</div>
+      <div class="cell g">47</div>
+      <div class="cell g">53</div>
+      <div class="cell g">49</div>
+      <div class="cell g">48</div>
+      <div class="cell g">51</div>
+      <div class="cell o">71</div>
+      <div class="cell o">72</div>
+      <div class="cell o">70</div>
+      <div class="cell o">68</div>
+      <div class="cell o">73</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 003</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">5</div>
+      <div class="cell b">13</div>
+      <div class="cell b">4</div>
+      <div class="cell b">9</div>
+      <div class="cell b">2</div>
+      <div class="cell i">26</div>
+      <div class="cell i">24</div>
+      <div class="cell i">25</div>
+      <div class="cell i">28</div>
+      <div class="cell i">16</div>
+      <div class="cell n">32</div>
+      <div class="cell n">37</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">41</div>
+      <div class="cell n">40</div>
+      <div class="cell g">46</div>
+      <div class="cell g">56</div>
+      <div class="cell g">60</div>
+      <div class="cell g">59</div>
+      <div class="cell g">49</div>
+      <div class="cell o">64</div>
+      <div class="cell o">62</div>
+      <div class="cell o">65</div>
+      <div class="cell o">75</div>
+      <div class="cell o">68</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 004</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">12</div>
+      <div class="cell b">13</div>
+      <div class="cell b">10</div>
+      <div class="cell b">6</div>
+      <div class="cell b">1</div>
+      <div class="cell i">28</div>
+      <div class="cell i">25</div>
+      <div class="cell i">21</div>
+      <div class="cell i">22</div>
+      <div class="cell i">29</div>
+      <div class="cell n">43</div>
+      <div class="cell n">34</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">39</div>
+      <div class="cell n">31</div>
+      <div class="cell g">58</div>
+      <div class="cell g">54</div>
+      <div class="cell g">57</div>
+      <div class="cell g">56</div>
+      <div class="cell g">50</div>
+      <div class="cell o">74</div>
+      <div class="cell o">64</div>
+      <div class="cell o">70</div>
+      <div class="cell o">63</div>
+      <div class="cell o">69</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 005</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">9</div>
+      <div class="cell b">15</div>
+      <div class="cell b">3</div>
+      <div class="cell b">11</div>
+      <div class="cell b">1</div>
+      <div class="cell i">27</div>
+      <div class="cell i">23</div>
+      <div class="cell i">30</div>
+      <div class="cell i">28</div>
+      <div class="cell i">25</div>
+      <div class="cell n">38</div>
+      <div class="cell n">31</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">43</div>
+      <div class="cell n">39</div>
+      <div class="cell g">53</div>
+      <div class="cell g">54</div>
+      <div class="cell g">58</div>
+      <div class="cell g">56</div>
+      <div class="cell g">51</div>
+      <div class="cell o">72</div>
+      <div class="cell o">69</div>
+      <div class="cell o">73</div>
+      <div class="cell o">70</div>
+      <div class="cell o">71</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 006</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">5</div>
+      <div class="cell b">15</div>
+      <div class="cell b">2</div>
+      <div class="cell b">12</div>
+      <div class="cell b">3</div>
+      <div class="cell i">16</div>
+      <div class="cell i">18</div>
+      <div class="cell i">21</div>
+      <div class="cell i">17</div>
+      <div class="cell i">19</div>
+      <div class="cell n">38</div>
+      <div class="cell n">39</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">35</div>
+      <div class="cell n">31</div>
+      <div class="cell g">54</div>
+      <div class="cell g">48</div>
+      <div class="cell g">52</div>
+      <div class="cell g">51</div>
+      <div class="cell g">55</div>
+      <div class="cell o">72</div>
+      <div class="cell o">61</div>
+      <div class="cell o">67</div>
+      <div class="cell o">65</div>
+      <div class="cell o">63</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 007</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">1</div>
+      <div class="cell b">11</div>
+      <div class="cell b">8</div>
+      <div class="cell b">6</div>
+      <div class="cell b">7</div>
+      <div class="cell i">17</div>
+      <div class="cell i">19</div>
+      <div class="cell i">21</div>
+      <div class="cell i">26</div>
+      <div class="cell i">27</div>
+      <div class="cell n">41</div>
+      <div class="cell n">40</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">35</div>
+      <div class="cell n">42</div>
+      <div class="cell g">49</div>
+      <div class="cell g">60</div>
+      <div class="cell g">48</div>
+      <div class="cell g">53</div>
+      <div class="cell g">52</div>
+      <div class="cell o">70</div>
+      <div class="cell o">67</div>
+      <div class="cell o">69</div>
+      <div class="cell o">65</div>
+      <div class="cell o">63</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 008</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">4</div>
+      <div class="cell b">12</div>
+      <div class="cell b">6</div>
+      <div class="cell b">7</div>
+      <div class="cell b">10</div>
+      <div class="cell i">19</div>
+      <div class="cell i">28</div>
+      <div class="cell i">29</div>
+      <div class="cell i">25</div>
+      <div class="cell i">22</div>
+      <div class="cell n">45</div>
+      <div class="cell n">33</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">42</div>
+      <div class="cell n">38</div>
+      <div class="cell g">55</div>
+      <div class="cell g">57</div>
+      <div class="cell g">56</div>
+      <div class="cell g">51</div>
+      <div class="cell g">46</div>
+      <div class="cell o">61</div>
+      <div class="cell o">69</div>
+      <div class="cell o">70</div>
+      <div class="cell o">64</div>
+      <div class="cell o">71</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 009</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">7</div>
+      <div class="cell b">5</div>
+      <div class="cell b">13</div>
+      <div class="cell b">9</div>
+      <div class="cell b">6</div>
+      <div class="cell i">28</div>
+      <div class="cell i">22</div>
+      <div class="cell i">21</div>
+      <div class="cell i">19</div>
+      <div class="cell i">20</div>
+      <div class="cell n">45</div>
+      <div class="cell n">38</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">40</div>
+      <div class="cell n">37</div>
+      <div class="cell g">56</div>
+      <div class="cell g">52</div>
+      <div class="cell g">48</div>
+      <div class="cell g">55</div>
+      <div class="cell g">50</div>
+      <div class="cell o">73</div>
+      <div class="cell o">72</div>
+      <div class="cell o">64</div>
+      <div class="cell o">67</div>
+      <div class="cell o">62</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 010</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">8</div>
+      <div class="cell b">12</div>
+      <div class="cell b">1</div>
+      <div class="cell b">6</div>
+      <div class="cell b">2</div>
+      <div class="cell i">29</div>
+      <div class="cell i">20</div>
+      <div class="cell i">23</div>
+      <div class="cell i">24</div>
+      <div class="cell i">25</div>
+      <div class="cell n">45</div>
+      <div class="cell n">37</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">33</div>
+      <div class="cell n">31</div>
+      <div class="cell g">59</div>
+      <div class="cell g">54</div>
+      <div class="cell g">55</div>
+      <div class="cell g">52</div>
+      <div class="cell g">49</div>
+      <div class="cell o">71</div>
+      <div class="cell o">68</div>
+      <div class="cell o">62</div>
+      <div class="cell o">75</div>
+      <div class="cell o">64</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 011</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">5</div>
+      <div class="cell b">1</div>
+      <div class="cell b">8</div>
+      <div class="cell b">12</div>
+      <div class="cell b">4</div>
+      <div class="cell i">21</div>
+      <div class="cell i">24</div>
+      <div class="cell i">30</div>
+      <div class="cell i">20</div>
+      <div class="cell i">25</div>
+      <div class="cell n">32</div>
+      <div class="cell n">41</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">44</div>
+      <div class="cell n">33</div>
+      <div class="cell g">54</div>
+      <div class="cell g">58</div>
+      <div class="cell g">55</div>
+      <div class="cell g">56</div>
+      <div class="cell g">57</div>
+      <div class="cell o">61</div>
+      <div class="cell o">71</div>
+      <div class="cell o">69</div>
+      <div class="cell o">68</div>
+      <div class="cell o">65</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 012</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">1</div>
+      <div class="cell b">3</div>
+      <div class="cell b">14</div>
+      <div class="cell b">8</div>
+      <div class="cell b">2</div>
+      <div class="cell i">30</div>
+      <div class="cell i">29</div>
+      <div class="cell i">26</div>
+      <div class="cell i">27</div>
+      <div class="cell i">25</div>
+      <div class="cell n">38</div>
+      <div class="cell n">45</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">42</div>
+      <div class="cell n">43</div>
+      <div class="cell g">46</div>
+      <div class="cell g">48</div>
+      <div class="cell g">58</div>
+      <div class="cell g">49</div>
+      <div class="cell g">59</div>
+      <div class="cell o">64</div>
+      <div class="cell o">73</div>
+      <div class="cell o">75</div>
+      <div class="cell o">71</div>
+      <div class="cell o">61</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 013</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">12</div>
+      <div class="cell b">11</div>
+      <div class="cell b">13</div>
+      <div class="cell b">8</div>
+      <div class="cell b">15</div>
+      <div class="cell i">27</div>
+      <div class="cell i">28</div>
+      <div class="cell i">22</div>
+      <div class="cell i">26</div>
+      <div class="cell i">20</div>
+      <div class="cell n">43</div>
+      <div class="cell n">36</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">31</div>
+      <div class="cell n">42</div>
+      <div class="cell g">52</div>
+      <div class="cell g">51</div>
+      <div class="cell g">58</div>
+      <div class="cell g">56</div>
+      <div class="cell g">47</div>
+      <div class="cell o">73</div>
+      <div class="cell o">63</div>
+      <div class="cell o">62</div>
+      <div class="cell o">72</div>
+      <div class="cell o">61</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 014</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">15</div>
+      <div class="cell b">5</div>
+      <div class="cell b">11</div>
+      <div class="cell b">13</div>
+      <div class="cell b">4</div>
+      <div class="cell i">18</div>
+      <div class="cell i">26</div>
+      <div class="cell i">19</div>
+      <div class="cell i">17</div>
+      <div class="cell i">27</div>
+      <div class="cell n">33</div>
+      <div class="cell n">39</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">41</div>
+      <div class="cell n">37</div>
+      <div class="cell g">55</div>
+      <div class="cell g">60</div>
+      <div class="cell g">49</div>
+      <div class="cell g">46</div>
+      <div class="cell g">52</div>
+      <div class="cell o">64</div>
+      <div class="cell o">71</div>
+      <div class="cell o">73</div>
+      <div class="cell o">67</div>
+      <div class="cell o">66</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 015</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">14</div>
+      <div class="cell b">9</div>
+      <div class="cell b">8</div>
+      <div class="cell b">13</div>
+      <div class="cell b">4</div>
+      <div class="cell i">17</div>
+      <div class="cell i">30</div>
+      <div class="cell i">29</div>
+      <div class="cell i">26</div>
+      <div class="cell i">27</div>
+      <div class="cell n">33</div>
+      <div class="cell n">36</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">35</div>
+      <div class="cell n">40</div>
+      <div class="cell g">52</div>
+      <div class="cell g">46</div>
+      <div class="cell g">59</div>
+      <div class="cell g">56</div>
+      <div class="cell g">49</div>
+      <div class="cell o">61</div>
+      <div class="cell o">69</div>
+      <div class="cell o">74</div>
+      <div class="cell o">62</div>
+      <div class="cell o">71</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 016</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">7</div>
+      <div class="cell b">5</div>
+      <div class="cell b">9</div>
+      <div class="cell b">13</div>
+      <div class="cell b">14</div>
+      <div class="cell i">18</div>
+      <div class="cell i">27</div>
+      <div class="cell i">16</div>
+      <div class="cell i">22</div>
+      <div class="cell i">20</div>
+      <div class="cell n">38</div>
+      <div class="cell n">36</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">31</div>
+      <div class="cell n">41</div>
+      <div class="cell g">51</div>
+      <div class="cell g">46</div>
+      <div class="cell g">58</div>
+      <div class="cell g">55</div>
+      <div class="cell g">59</div>
+      <div class="cell o">62</div>
+      <div class="cell o">73</div>
+      <div class="cell o">74</div>
+      <div class="cell o">61</div>
+      <div class="cell o">66</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 017</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">13</div>
+      <div class="cell b">7</div>
+      <div class="cell b">10</div>
+      <div class="cell b">14</div>
+      <div class="cell b">12</div>
+      <div class="cell i">23</div>
+      <div class="cell i">18</div>
+      <div class="cell i">16</div>
+      <div class="cell i">30</div>
+      <div class="cell i">26</div>
+      <div class="cell n">44</div>
+      <div class="cell n">33</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">34</div>
+      <div class="cell n">32</div>
+      <div class="cell g">52</div>
+      <div class="cell g">49</div>
+      <div class="cell g">47</div>
+      <div class="cell g">54</div>
+      <div class="cell g">56</div>
+      <div class="cell o">69</div>
+      <div class="cell o">73</div>
+      <div class="cell o">74</div>
+      <div class="cell o">63</div>
+      <div class="cell o">67</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 018</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">4</div>
+      <div class="cell b">10</div>
+      <div class="cell b">2</div>
+      <div class="cell b">15</div>
+      <div class="cell b">9</div>
+      <div class="cell i">18</div>
+      <div class="cell i">22</div>
+      <div class="cell i">16</div>
+      <div class="cell i">29</div>
+      <div class="cell i">24</div>
+      <div class="cell n">39</div>
+      <div class="cell n">43</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">35</div>
+      <div class="cell n">32</div>
+      <div class="cell g">57</div>
+      <div class="cell g">56</div>
+      <div class="cell g">51</div>
+      <div class="cell g">50</div>
+      <div class="cell g">46</div>
+      <div class="cell o">72</div>
+      <div class="cell o">68</div>
+      <div class="cell o">66</div>
+      <div class="cell o">73</div>
+      <div class="cell o">61</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 019</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">13</div>
+      <div class="cell b">6</div>
+      <div class="cell b">10</div>
+      <div class="cell b">15</div>
+      <div class="cell b">14</div>
+      <div class="cell i">30</div>
+      <div class="cell i">27</div>
+      <div class="cell i">19</div>
+      <div class="cell i">17</div>
+      <div class="cell i">24</div>
+      <div class="cell n">31</div>
+      <div class="cell n">42</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">45</div>
+      <div class="cell n">37</div>
+      <div class="cell g">57</div>
+      <div class="cell g">54</div>
+      <div class="cell g">52</div>
+      <div class="cell g">46</div>
+      <div class="cell g">58</div>
+      <div class="cell o">61</div>
+      <div class="cell o">71</div>
+      <div class="cell o">75</div>
+      <div class="cell o">74</div>
+      <div class="cell o">70</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 020</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">7</div>
+      <div class="cell b">12</div>
+      <div class="cell b">8</div>
+      <div class="cell b">2</div>
+      <div class="cell b">6</div>
+      <div class="cell i">25</div>
+      <div class="cell i">24</div>
+      <div class="cell i">30</div>
+      <div class="cell i">23</div>
+      <div class="cell i">29</div>
+      <div class="cell n">39</div>
+      <div class="cell n">34</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">32</div>
+      <div class="cell n">38</div>
+      <div class="cell g">55</div>
+      <div class="cell g">56</div>
+      <div class="cell g">58</div>
+      <div class="cell g">51</div>
+      <div class="cell g">57</div>
+      <div class="cell o">61</div>
+      <div class="cell o">63</div>
+      <div class="cell o">74</div>
+      <div class="cell o">62</div>
+      <div class="cell o">64</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 021</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">13</div>
+      <div class="cell b">10</div>
+      <div class="cell b">7</div>
+      <div class="cell b">3</div>
+      <div class="cell b">12</div>
+      <div class="cell i">19</div>
+      <div class="cell i">26</div>
+      <div class="cell i">20</div>
+      <div class="cell i">22</div>
+      <div class="cell i">23</div>
+      <div class="cell n">36</div>
+      <div class="cell n">32</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">45</div>
+      <div class="cell n">40</div>
+      <div class="cell g">49</div>
+      <div class="cell g">48</div>
+      <div class="cell g">55</div>
+      <div class="cell g">53</div>
+      <div class="cell g">50</div>
+      <div class="cell o">73</div>
+      <div class="cell o">69</div>
+      <div class="cell o">75</div>
+      <div class="cell o">62</div>
+      <div class="cell o">71</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 022</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">15</div>
+      <div class="cell b">5</div>
+      <div class="cell b">8</div>
+      <div class="cell b">14</div>
+      <div class="cell b">3</div>
+      <div class="cell i">27</div>
+      <div class="cell i">17</div>
+      <div class="cell i">28</div>
+      <div class="cell i">19</div>
+      <div class="cell i">18</div>
+      <div class="cell n">42</div>
+      <div class="cell n">45</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">33</div>
+      <div class="cell n">43</div>
+      <div class="cell g">46</div>
+      <div class="cell g">56</div>
+      <div class="cell g">60</div>
+      <div class="cell g">58</div>
+      <div class="cell g">49</div>
+      <div class="cell o">73</div>
+      <div class="cell o">66</div>
+      <div class="cell o">62</div>
+      <div class="cell o">65</div>
+      <div class="cell o">64</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 023</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">11</div>
+      <div class="cell b">2</div>
+      <div class="cell b">12</div>
+      <div class="cell b">9</div>
+      <div class="cell b">7</div>
+      <div class="cell i">25</div>
+      <div class="cell i">24</div>
+      <div class="cell i">30</div>
+      <div class="cell i">22</div>
+      <div class="cell i">27</div>
+      <div class="cell n">32</div>
+      <div class="cell n">34</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">43</div>
+      <div class="cell n">33</div>
+      <div class="cell g">57</div>
+      <div class="cell g">59</div>
+      <div class="cell g">51</div>
+      <div class="cell g">60</div>
+      <div class="cell g">49</div>
+      <div class="cell o">72</div>
+      <div class="cell o">69</div>
+      <div class="cell o">71</div>
+      <div class="cell o">61</div>
+      <div class="cell o">64</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 024</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">2</div>
+      <div class="cell b">5</div>
+      <div class="cell b">9</div>
+      <div class="cell b">6</div>
+      <div class="cell b">14</div>
+      <div class="cell i">21</div>
+      <div class="cell i">20</div>
+      <div class="cell i">16</div>
+      <div class="cell i">29</div>
+      <div class="cell i">22</div>
+      <div class="cell n">36</div>
+      <div class="cell n">45</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">42</div>
+      <div class="cell n">32</div>
+      <div class="cell g">56</div>
+      <div class="cell g">54</div>
+      <div class="cell g">58</div>
+      <div class="cell g">55</div>
+      <div class="cell g">50</div>
+      <div class="cell o">69</div>
+      <div class="cell o">65</div>
+      <div class="cell o">61</div>
+      <div class="cell o">66</div>
+      <div class="cell o">73</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 025</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">15</div>
+      <div class="cell b">3</div>
+      <div class="cell b">7</div>
+      <div class="cell b">8</div>
+      <div class="cell b">12</div>
+      <div class="cell i">26</div>
+      <div class="cell i">28</div>
+      <div class="cell i">25</div>
+      <div class="cell i">21</div>
+      <div class="cell i">18</div>
+      <div class="cell n">40</div>
+      <div class="cell n">37</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">39</div>
+      <div class="cell n">41</div>
+      <div class="cell g">46</div>
+      <div class="cell g">53</div>
+      <div class="cell g">47</div>
+      <div class="cell g">55</div>
+      <div class="cell g">49</div>
+      <div class="cell o">75</div>
+      <div class="cell o">72</div>
+      <div class="cell o">69</div>
+      <div class="cell o">67</div>
+      <div class="cell o">65</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 026</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">4</div>
+      <div class="cell b">13</div>
+      <div class="cell b">9</div>
+      <div class="cell b">8</div>
+      <div class="cell b">11</div>
+      <div class="cell i">25</div>
+      <div class="cell i">30</div>
+      <div class="cell i">22</div>
+      <div class="cell i">29</div>
+      <div class="cell i">23</div>
+      <div class="cell n">42</div>
+      <div class="cell n">40</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">33</div>
+      <div class="cell n">37</div>
+      <div class="cell g">52</div>
+      <div class="cell g">57</div>
+      <div class="cell g">60</div>
+      <div class="cell g">48</div>
+      <div class="cell g">47</div>
+      <div class="cell o">65</div>
+      <div class="cell o">66</div>
+      <div class="cell o">63</div>
+      <div class="cell o">75</div>
+      <div class="cell o">71</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 027</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">10</div>
+      <div class="cell b">5</div>
+      <div class="cell b">12</div>
+      <div class="cell b">9</div>
+      <div class="cell b">14</div>
+      <div class="cell i">17</div>
+      <div class="cell i">30</div>
+      <div class="cell i">25</div>
+      <div class="cell i">18</div>
+      <div class="cell i">27</div>
+      <div class="cell n">36</div>
+      <div class="cell n">41</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">37</div>
+      <div class="cell n">33</div>
+      <div class="cell g">54</div>
+      <div class="cell g">47</div>
+      <div class="cell g">56</div>
+      <div class="cell g">48</div>
+      <div class="cell g">60</div>
+      <div class="cell o">67</div>
+      <div class="cell o">72</div>
+      <div class="cell o">66</div>
+      <div class="cell o">71</div>
+      <div class="cell o">75</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 028</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">9</div>
+      <div class="cell b">1</div>
+      <div class="cell b">13</div>
+      <div class="cell b">5</div>
+      <div class="cell b">2</div>
+      <div class="cell i">22</div>
+      <div class="cell i">27</div>
+      <div class="cell i">30</div>
+      <div class="cell i">25</div>
+      <div class="cell i">24</div>
+      <div class="cell n">38</div>
+      <div class="cell n">43</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">31</div>
+      <div class="cell n">32</div>
+      <div class="cell g">46</div>
+      <div class="cell g">55</div>
+      <div class="cell g">49</div>
+      <div class="cell g">48</div>
+      <div class="cell g">58</div>
+      <div class="cell o">72</div>
+      <div class="cell o">62</div>
+      <div class="cell o">75</div>
+      <div class="cell o">61</div>
+      <div class="cell o">73</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 029</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">15</div>
+      <div class="cell b">10</div>
+      <div class="cell b">1</div>
+      <div class="cell b">14</div>
+      <div class="cell b">9</div>
+      <div class="cell i">25</div>
+      <div class="cell i">16</div>
+      <div class="cell i">30</div>
+      <div class="cell i">27</div>
+      <div class="cell i">21</div>
+      <div class="cell n">43</div>
+      <div class="cell n">33</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">40</div>
+      <div class="cell n">36</div>
+      <div class="cell g">49</div>
+      <div class="cell g">50</div>
+      <div class="cell g">55</div>
+      <div class="cell g">57</div>
+      <div class="cell g">59</div>
+      <div class="cell o">66</div>
+      <div class="cell o">65</div>
+      <div class="cell o">70</div>
+      <div class="cell o">67</div>
+      <div class="cell o">75</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 030</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">12</div>
+      <div class="cell b">3</div>
+      <div class="cell b">1</div>
+      <div class="cell b">9</div>
+      <div class="cell b">10</div>
+      <div class="cell i">29</div>
+      <div class="cell i">22</div>
+      <div class="cell i">17</div>
+      <div class="cell i">30</div>
+      <div class="cell i">27</div>
+      <div class="cell n">37</div>
+      <div class="cell n">34</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">38</div>
+      <div class="cell n">41</div>
+      <div class="cell g">47</div>
+      <div class="cell g">49</div>
+      <div class="cell g">46</div>
+      <div class="cell g">57</div>
+      <div class="cell g">54</div>
+      <div class="cell o">63</div>
+      <div class="cell o">67</div>
+      <div class="cell o">65</div>
+      <div class="cell o">70</div>
+      <div class="cell o">72</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 031</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">6</div>
+      <div class="cell b">5</div>
+      <div class="cell b">8</div>
+      <div class="cell b">3</div>
+      <div class="cell b">2</div>
+      <div class="cell i">16</div>
+      <div class="cell i">24</div>
+      <div class="cell i">26</div>
+      <div class="cell i">20</div>
+      <div class="cell i">21</div>
+      <div class="cell n">38</div>
+      <div class="cell n">31</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">41</div>
+      <div class="cell n">35</div>
+      <div class="cell g">55</div>
+      <div class="cell g">49</div>
+      <div class="cell g">54</div>
+      <div class="cell g">53</div>
+      <div class="cell g">52</div>
+      <div class="cell o">62</div>
+      <div class="cell o">66</div>
+      <div class="cell o">61</div>
+      <div class="cell o">73</div>
+      <div class="cell o">64</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 032</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">9</div>
+      <div class="cell b">10</div>
+      <div class="cell b">5</div>
+      <div class="cell b">14</div>
+      <div class="cell b">8</div>
+      <div class="cell i">20</div>
+      <div class="cell i">29</div>
+      <div class="cell i">23</div>
+      <div class="cell i">18</div>
+      <div class="cell i">24</div>
+      <div class="cell n">41</div>
+      <div class="cell n">31</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">45</div>
+      <div class="cell n">42</div>
+      <div class="cell g">51</div>
+      <div class="cell g">56</div>
+      <div class="cell g">53</div>
+      <div class="cell g">52</div>
+      <div class="cell g">55</div>
+      <div class="cell o">69</div>
+      <div class="cell o">70</div>
+      <div class="cell o">61</div>
+      <div class="cell o">64</div>
+      <div class="cell o">71</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 033</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">14</div>
+      <div class="cell b">13</div>
+      <div class="cell b">8</div>
+      <div class="cell b">11</div>
+      <div class="cell b">9</div>
+      <div class="cell i">18</div>
+      <div class="cell i">23</div>
+      <div class="cell i">27</div>
+      <div class="cell i">20</div>
+      <div class="cell i">28</div>
+      <div class="cell n">40</div>
+      <div class="cell n">33</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">38</div>
+      <div class="cell n">39</div>
+      <div class="cell g">59</div>
+      <div class="cell g">50</div>
+      <div class="cell g">52</div>
+      <div class="cell g">54</div>
+      <div class="cell g">53</div>
+      <div class="cell o">70</div>
+      <div class="cell o">69</div>
+      <div class="cell o">74</div>
+      <div class="cell o">67</div>
+      <div class="cell o">72</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 034</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">1</div>
+      <div class="cell b">3</div>
+      <div class="cell b">6</div>
+      <div class="cell b">11</div>
+      <div class="cell b">2</div>
+      <div class="cell i">25</div>
+      <div class="cell i">22</div>
+      <div class="cell i">21</div>
+      <div class="cell i">17</div>
+      <div class="cell i">24</div>
+      <div class="cell n">45</div>
+      <div class="cell n">34</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">44</div>
+      <div class="cell n">36</div>
+      <div class="cell g">50</div>
+      <div class="cell g">48</div>
+      <div class="cell g">56</div>
+      <div class="cell g">53</div>
+      <div class="cell g">49</div>
+      <div class="cell o">74</div>
+      <div class="cell o">66</div>
+      <div class="cell o">62</div>
+      <div class="cell o">68</div>
+      <div class="cell o">65</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 035</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">2</div>
+      <div class="cell b">11</div>
+      <div class="cell b">1</div>
+      <div class="cell b">9</div>
+      <div class="cell b">15</div>
+      <div class="cell i">19</div>
+      <div class="cell i">27</div>
+      <div class="cell i">29</div>
+      <div class="cell i">30</div>
+      <div class="cell i">28</div>
+      <div class="cell n">39</div>
+      <div class="cell n">43</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">37</div>
+      <div class="cell n">40</div>
+      <div class="cell g">56</div>
+      <div class="cell g">52</div>
+      <div class="cell g">60</div>
+      <div class="cell g">47</div>
+      <div class="cell g">46</div>
+      <div class="cell o">73</div>
+      <div class="cell o">61</div>
+      <div class="cell o">63</div>
+      <div class="cell o">71</div>
+      <div class="cell o">64</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 036</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">10</div>
+      <div class="cell b">12</div>
+      <div class="cell b">1</div>
+      <div class="cell b">6</div>
+      <div class="cell b">9</div>
+      <div class="cell i">30</div>
+      <div class="cell i">29</div>
+      <div class="cell i">23</div>
+      <div class="cell i">24</div>
+      <div class="cell i">25</div>
+      <div class="cell n">31</div>
+      <div class="cell n">34</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">32</div>
+      <div class="cell n">39</div>
+      <div class="cell g">51</div>
+      <div class="cell g">59</div>
+      <div class="cell g">54</div>
+      <div class="cell g">48</div>
+      <div class="cell g">60</div>
+      <div class="cell o">69</div>
+      <div class="cell o">75</div>
+      <div class="cell o">73</div>
+      <div class="cell o">65</div>
+      <div class="cell o">66</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 037</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">9</div>
+      <div class="cell b">14</div>
+      <div class="cell b">8</div>
+      <div class="cell b">5</div>
+      <div class="cell b">2</div>
+      <div class="cell i">23</div>
+      <div class="cell i">20</div>
+      <div class="cell i">17</div>
+      <div class="cell i">16</div>
+      <div class="cell i">27</div>
+      <div class="cell n">34</div>
+      <div class="cell n">43</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">42</div>
+      <div class="cell n">35</div>
+      <div class="cell g">57</div>
+      <div class="cell g">50</div>
+      <div class="cell g">47</div>
+      <div class="cell g">56</div>
+      <div class="cell g">48</div>
+      <div class="cell o">64</div>
+      <div class="cell o">63</div>
+      <div class="cell o">72</div>
+      <div class="cell o">74</div>
+      <div class="cell o">62</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 038</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">9</div>
+      <div class="cell b">3</div>
+      <div class="cell b">6</div>
+      <div class="cell b">12</div>
+      <div class="cell b">11</div>
+      <div class="cell i">20</div>
+      <div class="cell i">28</div>
+      <div class="cell i">17</div>
+      <div class="cell i">18</div>
+      <div class="cell i">26</div>
+      <div class="cell n">35</div>
+      <div class="cell n">39</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">37</div>
+      <div class="cell n">45</div>
+      <div class="cell g">52</div>
+      <div class="cell g">46</div>
+      <div class="cell g">60</div>
+      <div class="cell g">57</div>
+      <div class="cell g">49</div>
+      <div class="cell o">74</div>
+      <div class="cell o">65</div>
+      <div class="cell o">68</div>
+      <div class="cell o">75</div>
+      <div class="cell o">72</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 039</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">15</div>
+      <div class="cell b">12</div>
+      <div class="cell b">7</div>
+      <div class="cell b">2</div>
+      <div class="cell b">10</div>
+      <div class="cell i">24</div>
+      <div class="cell i">29</div>
+      <div class="cell i">30</div>
+      <div class="cell i">20</div>
+      <div class="cell i">18</div>
+      <div class="cell n">36</div>
+      <div class="cell n">39</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">44</div>
+      <div class="cell n">45</div>
+      <div class="cell g">60</div>
+      <div class="cell g">53</div>
+      <div class="cell g">59</div>
+      <div class="cell g">48</div>
+      <div class="cell g">52</div>
+      <div class="cell o">72</div>
+      <div class="cell o">65</div>
+      <div class="cell o">68</div>
+      <div class="cell o">71</div>
+      <div class="cell o">75</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 040</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">10</div>
+      <div class="cell b">3</div>
+      <div class="cell b">9</div>
+      <div class="cell b">5</div>
+      <div class="cell b">6</div>
+      <div class="cell i">28</div>
+      <div class="cell i">16</div>
+      <div class="cell i">26</div>
+      <div class="cell i">25</div>
+      <div class="cell i">27</div>
+      <div class="cell n">36</div>
+      <div class="cell n">38</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">43</div>
+      <div class="cell n">32</div>
+      <div class="cell g">50</div>
+      <div class="cell g">54</div>
+      <div class="cell g">55</div>
+      <div class="cell g">48</div>
+      <div class="cell g">60</div>
+      <div class="cell o">74</div>
+      <div class="cell o">65</div>
+      <div class="cell o">73</div>
+      <div class="cell o">63</div>
+      <div class="cell o">75</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 041</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">7</div>
+      <div class="cell b">12</div>
+      <div class="cell b">9</div>
+      <div class="cell b">14</div>
+      <div class="cell b">3</div>
+      <div class="cell i">29</div>
+      <div class="cell i">26</div>
+      <div class="cell i">21</div>
+      <div class="cell i">19</div>
+      <div class="cell i">28</div>
+      <div class="cell n">44</div>
+      <div class="cell n">36</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">39</div>
+      <div class="cell n">40</div>
+      <div class="cell g">46</div>
+      <div class="cell g">58</div>
+      <div class="cell g">51</div>
+      <div class="cell g">53</div>
+      <div class="cell g">49</div>
+      <div class="cell o">74</div>
+      <div class="cell o">73</div>
+      <div class="cell o">71</div>
+      <div class="cell o">69</div>
+      <div class="cell o">66</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 042</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">15</div>
+      <div class="cell b">11</div>
+      <div class="cell b">8</div>
+      <div class="cell b">10</div>
+      <div class="cell b">7</div>
+      <div class="cell i">19</div>
+      <div class="cell i">18</div>
+      <div class="cell i">27</div>
+      <div class="cell i">30</div>
+      <div class="cell i">21</div>
+      <div class="cell n">35</div>
+      <div class="cell n">34</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">33</div>
+      <div class="cell n">41</div>
+      <div class="cell g">50</div>
+      <div class="cell g">56</div>
+      <div class="cell g">54</div>
+      <div class="cell g">53</div>
+      <div class="cell g">59</div>
+      <div class="cell o">67</div>
+      <div class="cell o">71</div>
+      <div class="cell o">73</div>
+      <div class="cell o">61</div>
+      <div class="cell o">65</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 043</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">11</div>
+      <div class="cell b">5</div>
+      <div class="cell b">15</div>
+      <div class="cell b">6</div>
+      <div class="cell b">1</div>
+      <div class="cell i">18</div>
+      <div class="cell i">24</div>
+      <div class="cell i">21</div>
+      <div class="cell i">17</div>
+      <div class="cell i">28</div>
+      <div class="cell n">42</div>
+      <div class="cell n">31</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">41</div>
+      <div class="cell n">33</div>
+      <div class="cell g">47</div>
+      <div class="cell g">56</div>
+      <div class="cell g">54</div>
+      <div class="cell g">49</div>
+      <div class="cell g">53</div>
+      <div class="cell o">64</div>
+      <div class="cell o">72</div>
+      <div class="cell o">69</div>
+      <div class="cell o">66</div>
+      <div class="cell o">67</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 044</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">3</div>
+      <div class="cell b">4</div>
+      <div class="cell b">14</div>
+      <div class="cell b">13</div>
+      <div class="cell b">1</div>
+      <div class="cell i">25</div>
+      <div class="cell i">24</div>
+      <div class="cell i">21</div>
+      <div class="cell i">18</div>
+      <div class="cell i">30</div>
+      <div class="cell n">38</div>
+      <div class="cell n">43</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">36</div>
+      <div class="cell n">32</div>
+      <div class="cell g">57</div>
+      <div class="cell g">50</div>
+      <div class="cell g">47</div>
+      <div class="cell g">55</div>
+      <div class="cell g">59</div>
+      <div class="cell o">67</div>
+      <div class="cell o">74</div>
+      <div class="cell o">61</div>
+      <div class="cell o">68</div>
+      <div class="cell o">65</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 045</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">8</div>
+      <div class="cell b">7</div>
+      <div class="cell b">6</div>
+      <div class="cell b">5</div>
+      <div class="cell b">11</div>
+      <div class="cell i">19</div>
+      <div class="cell i">27</div>
+      <div class="cell i">18</div>
+      <div class="cell i">23</div>
+      <div class="cell i">20</div>
+      <div class="cell n">40</div>
+      <div class="cell n">37</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">39</div>
+      <div class="cell n">31</div>
+      <div class="cell g">53</div>
+      <div class="cell g">51</div>
+      <div class="cell g">52</div>
+      <div class="cell g">57</div>
+      <div class="cell g">58</div>
+      <div class="cell o">66</div>
+      <div class="cell o">68</div>
+      <div class="cell o">71</div>
+      <div class="cell o">62</div>
+      <div class="cell o">74</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 046</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">15</div>
+      <div class="cell b">12</div>
+      <div class="cell b">5</div>
+      <div class="cell b">2</div>
+      <div class="cell b">8</div>
+      <div class="cell i">21</div>
+      <div class="cell i">24</div>
+      <div class="cell i">30</div>
+      <div class="cell i">16</div>
+      <div class="cell i">19</div>
+      <div class="cell n">38</div>
+      <div class="cell n">37</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">32</div>
+      <div class="cell n">39</div>
+      <div class="cell g">56</div>
+      <div class="cell g">47</div>
+      <div class="cell g">59</div>
+      <div class="cell g">58</div>
+      <div class="cell g">55</div>
+      <div class="cell o">64</div>
+      <div class="cell o">68</div>
+      <div class="cell o">73</div>
+      <div class="cell o">67</div>
+      <div class="cell o">74</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 047</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">14</div>
+      <div class="cell b">6</div>
+      <div class="cell b">4</div>
+      <div class="cell b">15</div>
+      <div class="cell b">5</div>
+      <div class="cell i">28</div>
+      <div class="cell i">24</div>
+      <div class="cell i">17</div>
+      <div class="cell i">21</div>
+      <div class="cell i">23</div>
+      <div class="cell n">34</div>
+      <div class="cell n">40</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">43</div>
+      <div class="cell n">31</div>
+      <div class="cell g">46</div>
+      <div class="cell g">48</div>
+      <div class="cell g">47</div>
+      <div class="cell g">51</div>
+      <div class="cell g">49</div>
+      <div class="cell o">70</div>
+      <div class="cell o">71</div>
+      <div class="cell o">65</div>
+      <div class="cell o">69</div>
+      <div class="cell o">66</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 048</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">11</div>
+      <div class="cell b">5</div>
+      <div class="cell b">9</div>
+      <div class="cell b">7</div>
+      <div class="cell b">13</div>
+      <div class="cell i">18</div>
+      <div class="cell i">24</div>
+      <div class="cell i">30</div>
+      <div class="cell i">20</div>
+      <div class="cell i">16</div>
+      <div class="cell n">34</div>
+      <div class="cell n">43</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">37</div>
+      <div class="cell n">39</div>
+      <div class="cell g">50</div>
+      <div class="cell g">46</div>
+      <div class="cell g">57</div>
+      <div class="cell g">47</div>
+      <div class="cell g">53</div>
+      <div class="cell o">67</div>
+      <div class="cell o">64</div>
+      <div class="cell o">66</div>
+      <div class="cell o">69</div>
+      <div class="cell o">71</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 049</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">9</div>
+      <div class="cell b">7</div>
+      <div class="cell b">12</div>
+      <div class="cell b">6</div>
+      <div class="cell b">4</div>
+      <div class="cell i">24</div>
+      <div class="cell i">21</div>
+      <div class="cell i">19</div>
+      <div class="cell i">17</div>
+      <div class="cell i">18</div>
+      <div class="cell n">34</div>
+      <div class="cell n">36</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">39</div>
+      <div class="cell n">32</div>
+      <div class="cell g">54</div>
+      <div class="cell g">47</div>
+      <div class="cell g">52</div>
+      <div class="cell g">56</div>
+      <div class="cell g">59</div>
+      <div class="cell o">63</div>
+      <div class="cell o">75</div>
+      <div class="cell o">66</div>
+      <div class="cell o">61</div>
+      <div class="cell o">64</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 050</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">4</div>
+      <div class="cell b">7</div>
+      <div class="cell b">12</div>
+      <div class="cell b">15</div>
+      <div class="cell b">11</div>
+      <div class="cell i">26</div>
+      <div class="cell i">22</div>
+      <div class="cell i">17</div>
+      <div class="cell i">19</div>
+      <div class="cell i">24</div>
+      <div class="cell n">34</div>
+      <div class="cell n">45</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">40</div>
+      <div class="cell n">36</div>
+      <div class="cell g">57</div>
+      <div class="cell g">51</div>
+      <div class="cell g">50</div>
+      <div class="cell g">49</div>
+      <div class="cell g">56</div>
+      <div class="cell o">74</div>
+      <div class="cell o">68</div>
+      <div class="cell o">66</div>
+      <div class="cell o">62</div>
+      <div class="cell o">61</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 051</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">14</div>
+      <div class="cell b">2</div>
+      <div class="cell b">7</div>
+      <div class="cell b">12</div>
+      <div class="cell b">8</div>
+      <div class="cell i">17</div>
+      <div class="cell i">26</div>
+      <div class="cell i">29</div>
+      <div class="cell i">16</div>
+      <div class="cell i">24</div>
+      <div class="cell n">43</div>
+      <div class="cell n">32</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">41</div>
+      <div class="cell n">39</div>
+      <div class="cell g">59</div>
+      <div class="cell g">58</div>
+      <div class="cell g">51</div>
+      <div class="cell g">57</div>
+      <div class="cell g">48</div>
+      <div class="cell o">71</div>
+      <div class="cell o">68</div>
+      <div class="cell o">69</div>
+      <div class="cell o">74</div>
+      <div class="cell o">67</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 052</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">12</div>
+      <div class="cell b">5</div>
+      <div class="cell b">1</div>
+      <div class="cell b">11</div>
+      <div class="cell b">13</div>
+      <div class="cell i">19</div>
+      <div class="cell i">29</div>
+      <div class="cell i">21</div>
+      <div class="cell i">30</div>
+      <div class="cell i">28</div>
+      <div class="cell n">44</div>
+      <div class="cell n">42</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">40</div>
+      <div class="cell n">31</div>
+      <div class="cell g">53</div>
+      <div class="cell g">48</div>
+      <div class="cell g">49</div>
+      <div class="cell g">50</div>
+      <div class="cell g">47</div>
+      <div class="cell o">74</div>
+      <div class="cell o">63</div>
+      <div class="cell o">65</div>
+      <div class="cell o">75</div>
+      <div class="cell o">67</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 053</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">5</div>
+      <div class="cell b">7</div>
+      <div class="cell b">8</div>
+      <div class="cell b">6</div>
+      <div class="cell b">1</div>
+      <div class="cell i">30</div>
+      <div class="cell i">29</div>
+      <div class="cell i">17</div>
+      <div class="cell i">27</div>
+      <div class="cell i">18</div>
+      <div class="cell n">43</div>
+      <div class="cell n">34</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">31</div>
+      <div class="cell n">44</div>
+      <div class="cell g">52</div>
+      <div class="cell g">46</div>
+      <div class="cell g">49</div>
+      <div class="cell g">57</div>
+      <div class="cell g">48</div>
+      <div class="cell o">72</div>
+      <div class="cell o">65</div>
+      <div class="cell o">69</div>
+      <div class="cell o">63</div>
+      <div class="cell o">71</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 054</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">15</div>
+      <div class="cell b">4</div>
+      <div class="cell b">5</div>
+      <div class="cell b">8</div>
+      <div class="cell b">14</div>
+      <div class="cell i">24</div>
+      <div class="cell i">16</div>
+      <div class="cell i">28</div>
+      <div class="cell i">20</div>
+      <div class="cell i">21</div>
+      <div class="cell n">38</div>
+      <div class="cell n">42</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">41</div>
+      <div class="cell n">45</div>
+      <div class="cell g">46</div>
+      <div class="cell g">55</div>
+      <div class="cell g">59</div>
+      <div class="cell g">52</div>
+      <div class="cell g">53</div>
+      <div class="cell o">73</div>
+      <div class="cell o">66</div>
+      <div class="cell o">72</div>
+      <div class="cell o">62</div>
+      <div class="cell o">65</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 055</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">13</div>
+      <div class="cell b">5</div>
+      <div class="cell b">11</div>
+      <div class="cell b">2</div>
+      <div class="cell b">12</div>
+      <div class="cell i">20</div>
+      <div class="cell i">27</div>
+      <div class="cell i">23</div>
+      <div class="cell i">30</div>
+      <div class="cell i">26</div>
+      <div class="cell n">35</div>
+      <div class="cell n">41</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">31</div>
+      <div class="cell n">37</div>
+      <div class="cell g">60</div>
+      <div class="cell g">49</div>
+      <div class="cell g">54</div>
+      <div class="cell g">59</div>
+      <div class="cell g">57</div>
+      <div class="cell o">71</div>
+      <div class="cell o">74</div>
+      <div class="cell o">61</div>
+      <div class="cell o">72</div>
+      <div class="cell o">62</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 056</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">4</div>
+      <div class="cell b">11</div>
+      <div class="cell b">9</div>
+      <div class="cell b">5</div>
+      <div class="cell b">12</div>
+      <div class="cell i">30</div>
+      <div class="cell i">20</div>
+      <div class="cell i">21</div>
+      <div class="cell i">18</div>
+      <div class="cell i">19</div>
+      <div class="cell n">38</div>
+      <div class="cell n">39</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">45</div>
+      <div class="cell n">33</div>
+      <div class="cell g">47</div>
+      <div class="cell g">48</div>
+      <div class="cell g">60</div>
+      <div class="cell g">58</div>
+      <div class="cell g">52</div>
+      <div class="cell o">68</div>
+      <div class="cell o">61</div>
+      <div class="cell o">69</div>
+      <div class="cell o">67</div>
+      <div class="cell o">62</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 057</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">13</div>
+      <div class="cell b">6</div>
+      <div class="cell b">9</div>
+      <div class="cell b">1</div>
+      <div class="cell b">7</div>
+      <div class="cell i">16</div>
+      <div class="cell i">22</div>
+      <div class="cell i">25</div>
+      <div class="cell i">30</div>
+      <div class="cell i">29</div>
+      <div class="cell n">45</div>
+      <div class="cell n">34</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">41</div>
+      <div class="cell n">37</div>
+      <div class="cell g">51</div>
+      <div class="cell g">56</div>
+      <div class="cell g">54</div>
+      <div class="cell g">50</div>
+      <div class="cell g">58</div>
+      <div class="cell o">65</div>
+      <div class="cell o">66</div>
+      <div class="cell o">64</div>
+      <div class="cell o">68</div>
+      <div class="cell o">61</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 058</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">3</div>
+      <div class="cell b">12</div>
+      <div class="cell b">9</div>
+      <div class="cell b">10</div>
+      <div class="cell b">15</div>
+      <div class="cell i">21</div>
+      <div class="cell i">23</div>
+      <div class="cell i">25</div>
+      <div class="cell i">19</div>
+      <div class="cell i">16</div>
+      <div class="cell n">32</div>
+      <div class="cell n">39</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">42</div>
+      <div class="cell n">45</div>
+      <div class="cell g">55</div>
+      <div class="cell g">46</div>
+      <div class="cell g">48</div>
+      <div class="cell g">57</div>
+      <div class="cell g">58</div>
+      <div class="cell o">73</div>
+      <div class="cell o">74</div>
+      <div class="cell o">67</div>
+      <div class="cell o">66</div>
+      <div class="cell o">69</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 059</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">6</div>
+      <div class="cell b">9</div>
+      <div class="cell b">2</div>
+      <div class="cell b">10</div>
+      <div class="cell b">4</div>
+      <div class="cell i">26</div>
+      <div class="cell i">23</div>
+      <div class="cell i">28</div>
+      <div class="cell i">22</div>
+      <div class="cell i">27</div>
+      <div class="cell n">42</div>
+      <div class="cell n">40</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">35</div>
+      <div class="cell n">37</div>
+      <div class="cell g">48</div>
+      <div class="cell g">49</div>
+      <div class="cell g">56</div>
+      <div class="cell g">51</div>
+      <div class="cell g">55</div>
+      <div class="cell o">75</div>
+      <div class="cell o">63</div>
+      <div class="cell o">66</div>
+      <div class="cell o">65</div>
+      <div class="cell o">64</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 060</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">5</div>
+      <div class="cell b">4</div>
+      <div class="cell b">6</div>
+      <div class="cell b">3</div>
+      <div class="cell b">11</div>
+      <div class="cell i">27</div>
+      <div class="cell i">21</div>
+      <div class="cell i">26</div>
+      <div class="cell i">24</div>
+      <div class="cell i">23</div>
+      <div class="cell n">37</div>
+      <div class="cell n">43</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">32</div>
+      <div class="cell n">39</div>
+      <div class="cell g">60</div>
+      <div class="cell g">58</div>
+      <div class="cell g">49</div>
+      <div class="cell g">59</div>
+      <div class="cell g">56</div>
+      <div class="cell o">69</div>
+      <div class="cell o">65</div>
+      <div class="cell o">63</div>
+      <div class="cell o">67</div>
+      <div class="cell o">74</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 061</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">4</div>
+      <div class="cell b">13</div>
+      <div class="cell b">6</div>
+      <div class="cell b">15</div>
+      <div class="cell b">3</div>
+      <div class="cell i">22</div>
+      <div class="cell i">19</div>
+      <div class="cell i">30</div>
+      <div class="cell i">17</div>
+      <div class="cell i">28</div>
+      <div class="cell n">34</div>
+      <div class="cell n">42</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">38</div>
+      <div class="cell n">41</div>
+      <div class="cell g">48</div>
+      <div class="cell g">53</div>
+      <div class="cell g">46</div>
+      <div class="cell g">58</div>
+      <div class="cell g">57</div>
+      <div class="cell o">70</div>
+      <div class="cell o">75</div>
+      <div class="cell o">68</div>
+      <div class="cell o">65</div>
+      <div class="cell o">71</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 062</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">7</div>
+      <div class="cell b">3</div>
+      <div class="cell b">5</div>
+      <div class="cell b">4</div>
+      <div class="cell b">14</div>
+      <div class="cell i">29</div>
+      <div class="cell i">25</div>
+      <div class="cell i">21</div>
+      <div class="cell i">18</div>
+      <div class="cell i">24</div>
+      <div class="cell n">41</div>
+      <div class="cell n">44</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">42</div>
+      <div class="cell n">40</div>
+      <div class="cell g">51</div>
+      <div class="cell g">57</div>
+      <div class="cell g">50</div>
+      <div class="cell g">56</div>
+      <div class="cell g">55</div>
+      <div class="cell o">72</div>
+      <div class="cell o">65</div>
+      <div class="cell o">68</div>
+      <div class="cell o">70</div>
+      <div class="cell o">66</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 063</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">6</div>
+      <div class="cell b">5</div>
+      <div class="cell b">1</div>
+      <div class="cell b">10</div>
+      <div class="cell b">11</div>
+      <div class="cell i">20</div>
+      <div class="cell i">26</div>
+      <div class="cell i">25</div>
+      <div class="cell i">21</div>
+      <div class="cell i">24</div>
+      <div class="cell n">35</div>
+      <div class="cell n">44</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">38</div>
+      <div class="cell n">40</div>
+      <div class="cell g">55</div>
+      <div class="cell g">57</div>
+      <div class="cell g">48</div>
+      <div class="cell g">60</div>
+      <div class="cell g">49</div>
+      <div class="cell o">67</div>
+      <div class="cell o">63</div>
+      <div class="cell o">74</div>
+      <div class="cell o">69</div>
+      <div class="cell o">62</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 064</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">15</div>
+      <div class="cell b">11</div>
+      <div class="cell b">4</div>
+      <div class="cell b">2</div>
+      <div class="cell b">13</div>
+      <div class="cell i">21</div>
+      <div class="cell i">28</div>
+      <div class="cell i">25</div>
+      <div class="cell i">30</div>
+      <div class="cell i">22</div>
+      <div class="cell n">40</div>
+      <div class="cell n">36</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">33</div>
+      <div class="cell n">45</div>
+      <div class="cell g">57</div>
+      <div class="cell g">49</div>
+      <div class="cell g">58</div>
+      <div class="cell g">50</div>
+      <div class="cell g">46</div>
+      <div class="cell o">65</div>
+      <div class="cell o">72</div>
+      <div class="cell o">66</div>
+      <div class="cell o">75</div>
+      <div class="cell o">68</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 065</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">1</div>
+      <div class="cell b">6</div>
+      <div class="cell b">4</div>
+      <div class="cell b">2</div>
+      <div class="cell b">10</div>
+      <div class="cell i">27</div>
+      <div class="cell i">18</div>
+      <div class="cell i">28</div>
+      <div class="cell i">20</div>
+      <div class="cell i">30</div>
+      <div class="cell n">33</div>
+      <div class="cell n">34</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">41</div>
+      <div class="cell n">35</div>
+      <div class="cell g">50</div>
+      <div class="cell g">49</div>
+      <div class="cell g">56</div>
+      <div class="cell g">58</div>
+      <div class="cell g">47</div>
+      <div class="cell o">70</div>
+      <div class="cell o">69</div>
+      <div class="cell o">62</div>
+      <div class="cell o">65</div>
+      <div class="cell o">61</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 066</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">4</div>
+      <div class="cell b">12</div>
+      <div class="cell b">7</div>
+      <div class="cell b">2</div>
+      <div class="cell b">10</div>
+      <div class="cell i">22</div>
+      <div class="cell i">16</div>
+      <div class="cell i">24</div>
+      <div class="cell i">26</div>
+      <div class="cell i">30</div>
+      <div class="cell n">44</div>
+      <div class="cell n">43</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">33</div>
+      <div class="cell n">38</div>
+      <div class="cell g">46</div>
+      <div class="cell g">58</div>
+      <div class="cell g">57</div>
+      <div class="cell g">48</div>
+      <div class="cell g">56</div>
+      <div class="cell o">72</div>
+      <div class="cell o">61</div>
+      <div class="cell o">64</div>
+      <div class="cell o">66</div>
+      <div class="cell o">63</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 067</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">4</div>
+      <div class="cell b">1</div>
+      <div class="cell b">11</div>
+      <div class="cell b">8</div>
+      <div class="cell b">5</div>
+      <div class="cell i">18</div>
+      <div class="cell i">24</div>
+      <div class="cell i">29</div>
+      <div class="cell i">28</div>
+      <div class="cell i">26</div>
+      <div class="cell n">33</div>
+      <div class="cell n">41</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">37</div>
+      <div class="cell n">35</div>
+      <div class="cell g">54</div>
+      <div class="cell g">58</div>
+      <div class="cell g">51</div>
+      <div class="cell g">47</div>
+      <div class="cell g">53</div>
+      <div class="cell o">63</div>
+      <div class="cell o">68</div>
+      <div class="cell o">69</div>
+      <div class="cell o">75</div>
+      <div class="cell o">73</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 068</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">12</div>
+      <div class="cell b">11</div>
+      <div class="cell b">3</div>
+      <div class="cell b">10</div>
+      <div class="cell b">6</div>
+      <div class="cell i">21</div>
+      <div class="cell i">30</div>
+      <div class="cell i">16</div>
+      <div class="cell i">20</div>
+      <div class="cell i">17</div>
+      <div class="cell n">43</div>
+      <div class="cell n">42</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">35</div>
+      <div class="cell n">37</div>
+      <div class="cell g">47</div>
+      <div class="cell g">60</div>
+      <div class="cell g">49</div>
+      <div class="cell g">59</div>
+      <div class="cell g">52</div>
+      <div class="cell o">66</div>
+      <div class="cell o">70</div>
+      <div class="cell o">71</div>
+      <div class="cell o">62</div>
+      <div class="cell o">75</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 069</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">13</div>
+      <div class="cell b">9</div>
+      <div class="cell b">14</div>
+      <div class="cell b">12</div>
+      <div class="cell b">4</div>
+      <div class="cell i">28</div>
+      <div class="cell i">23</div>
+      <div class="cell i">26</div>
+      <div class="cell i">17</div>
+      <div class="cell i">29</div>
+      <div class="cell n">39</div>
+      <div class="cell n">37</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">36</div>
+      <div class="cell n">33</div>
+      <div class="cell g">52</div>
+      <div class="cell g">49</div>
+      <div class="cell g">57</div>
+      <div class="cell g">47</div>
+      <div class="cell g">46</div>
+      <div class="cell o">73</div>
+      <div class="cell o">68</div>
+      <div class="cell o">61</div>
+      <div class="cell o">63</div>
+      <div class="cell o">75</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 070</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">5</div>
+      <div class="cell b">3</div>
+      <div class="cell b">4</div>
+      <div class="cell b">1</div>
+      <div class="cell b">12</div>
+      <div class="cell i">23</div>
+      <div class="cell i">25</div>
+      <div class="cell i">20</div>
+      <div class="cell i">21</div>
+      <div class="cell i">26</div>
+      <div class="cell n">40</div>
+      <div class="cell n">45</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">44</div>
+      <div class="cell n">39</div>
+      <div class="cell g">59</div>
+      <div class="cell g">49</div>
+      <div class="cell g">48</div>
+      <div class="cell g">58</div>
+      <div class="cell g">57</div>
+      <div class="cell o">61</div>
+      <div class="cell o">62</div>
+      <div class="cell o">64</div>
+      <div class="cell o">63</div>
+      <div class="cell o">74</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 071</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">9</div>
+      <div class="cell b">10</div>
+      <div class="cell b">8</div>
+      <div class="cell b">2</div>
+      <div class="cell b">4</div>
+      <div class="cell i">30</div>
+      <div class="cell i">19</div>
+      <div class="cell i">18</div>
+      <div class="cell i">22</div>
+      <div class="cell i">17</div>
+      <div class="cell n">44</div>
+      <div class="cell n">41</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">42</div>
+      <div class="cell n">37</div>
+      <div class="cell g">52</div>
+      <div class="cell g">49</div>
+      <div class="cell g">59</div>
+      <div class="cell g">48</div>
+      <div class="cell g">51</div>
+      <div class="cell o">75</div>
+      <div class="cell o">72</div>
+      <div class="cell o">61</div>
+      <div class="cell o">70</div>
+      <div class="cell o">63</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 072</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">11</div>
+      <div class="cell b">6</div>
+      <div class="cell b">4</div>
+      <div class="cell b">5</div>
+      <div class="cell b">10</div>
+      <div class="cell i">22</div>
+      <div class="cell i">18</div>
+      <div class="cell i">27</div>
+      <div class="cell i">28</div>
+      <div class="cell i">25</div>
+      <div class="cell n">37</div>
+      <div class="cell n">39</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">45</div>
+      <div class="cell n">43</div>
+      <div class="cell g">47</div>
+      <div class="cell g">46</div>
+      <div class="cell g">50</div>
+      <div class="cell g">58</div>
+      <div class="cell g">54</div>
+      <div class="cell o">72</div>
+      <div class="cell o">62</div>
+      <div class="cell o">63</div>
+      <div class="cell o">75</div>
+      <div class="cell o">68</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 073</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">12</div>
+      <div class="cell b">10</div>
+      <div class="cell b">7</div>
+      <div class="cell b">11</div>
+      <div class="cell b">5</div>
+      <div class="cell i">21</div>
+      <div class="cell i">29</div>
+      <div class="cell i">18</div>
+      <div class="cell i">17</div>
+      <div class="cell i">16</div>
+      <div class="cell n">32</div>
+      <div class="cell n">37</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">34</div>
+      <div class="cell n">45</div>
+      <div class="cell g">58</div>
+      <div class="cell g">57</div>
+      <div class="cell g">47</div>
+      <div class="cell g">46</div>
+      <div class="cell g">55</div>
+      <div class="cell o">65</div>
+      <div class="cell o">64</div>
+      <div class="cell o">69</div>
+      <div class="cell o">68</div>
+      <div class="cell o">75</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 074</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">13</div>
+      <div class="cell b">4</div>
+      <div class="cell b">12</div>
+      <div class="cell b">15</div>
+      <div class="cell b">2</div>
+      <div class="cell i">16</div>
+      <div class="cell i">19</div>
+      <div class="cell i">18</div>
+      <div class="cell i">21</div>
+      <div class="cell i">17</div>
+      <div class="cell n">32</div>
+      <div class="cell n">38</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">31</div>
+      <div class="cell n">44</div>
+      <div class="cell g">58</div>
+      <div class="cell g">59</div>
+      <div class="cell g">57</div>
+      <div class="cell g">46</div>
+      <div class="cell g">51</div>
+      <div class="cell o">65</div>
+      <div class="cell o">71</div>
+      <div class="cell o">74</div>
+      <div class="cell o">73</div>
+      <div class="cell o">66</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 075</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">13</div>
+      <div class="cell b">12</div>
+      <div class="cell b">10</div>
+      <div class="cell b">14</div>
+      <div class="cell b">5</div>
+      <div class="cell i">24</div>
+      <div class="cell i">29</div>
+      <div class="cell i">18</div>
+      <div class="cell i">28</div>
+      <div class="cell i">25</div>
+      <div class="cell n">37</div>
+      <div class="cell n">31</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">32</div>
+      <div class="cell n">38</div>
+      <div class="cell g">48</div>
+      <div class="cell g">50</div>
+      <div class="cell g">59</div>
+      <div class="cell g">60</div>
+      <div class="cell g">56</div>
+      <div class="cell o">63</div>
+      <div class="cell o">62</div>
+      <div class="cell o">65</div>
+      <div class="cell o">69</div>
+      <div class="cell o">74</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 076</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">5</div>
+      <div class="cell b">3</div>
+      <div class="cell b">15</div>
+      <div class="cell b">9</div>
+      <div class="cell b">12</div>
+      <div class="cell i">24</div>
+      <div class="cell i">19</div>
+      <div class="cell i">21</div>
+      <div class="cell i">30</div>
+      <div class="cell i">23</div>
+      <div class="cell n">42</div>
+      <div class="cell n">38</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">31</div>
+      <div class="cell n">45</div>
+      <div class="cell g">49</div>
+      <div class="cell g">50</div>
+      <div class="cell g">55</div>
+      <div class="cell g">60</div>
+      <div class="cell g">51</div>
+      <div class="cell o">75</div>
+      <div class="cell o">71</div>
+      <div class="cell o">72</div>
+      <div class="cell o">62</div>
+      <div class="cell o">65</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 077</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">6</div>
+      <div class="cell b">13</div>
+      <div class="cell b">1</div>
+      <div class="cell b">10</div>
+      <div class="cell b">14</div>
+      <div class="cell i">16</div>
+      <div class="cell i">17</div>
+      <div class="cell i">28</div>
+      <div class="cell i">21</div>
+      <div class="cell i">20</div>
+      <div class="cell n">36</div>
+      <div class="cell n">38</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">44</div>
+      <div class="cell n">40</div>
+      <div class="cell g">56</div>
+      <div class="cell g">58</div>
+      <div class="cell g">51</div>
+      <div class="cell g">57</div>
+      <div class="cell g">54</div>
+      <div class="cell o">69</div>
+      <div class="cell o">74</div>
+      <div class="cell o">66</div>
+      <div class="cell o">72</div>
+      <div class="cell o">65</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 078</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">5</div>
+      <div class="cell b">3</div>
+      <div class="cell b">10</div>
+      <div class="cell b">9</div>
+      <div class="cell b">11</div>
+      <div class="cell i">19</div>
+      <div class="cell i">27</div>
+      <div class="cell i">18</div>
+      <div class="cell i">17</div>
+      <div class="cell i">29</div>
+      <div class="cell n">32</div>
+      <div class="cell n">44</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">42</div>
+      <div class="cell n">36</div>
+      <div class="cell g">54</div>
+      <div class="cell g">46</div>
+      <div class="cell g">51</div>
+      <div class="cell g">57</div>
+      <div class="cell g">53</div>
+      <div class="cell o">71</div>
+      <div class="cell o">73</div>
+      <div class="cell o">75</div>
+      <div class="cell o">66</div>
+      <div class="cell o">70</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 079</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">8</div>
+      <div class="cell b">9</div>
+      <div class="cell b">5</div>
+      <div class="cell b">12</div>
+      <div class="cell b">4</div>
+      <div class="cell i">16</div>
+      <div class="cell i">25</div>
+      <div class="cell i">27</div>
+      <div class="cell i">28</div>
+      <div class="cell i">24</div>
+      <div class="cell n">42</div>
+      <div class="cell n">37</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">38</div>
+      <div class="cell n">40</div>
+      <div class="cell g">56</div>
+      <div class="cell g">50</div>
+      <div class="cell g">46</div>
+      <div class="cell g">47</div>
+      <div class="cell g">51</div>
+      <div class="cell o">69</div>
+      <div class="cell o">67</div>
+      <div class="cell o">74</div>
+      <div class="cell o">72</div>
+      <div class="cell o">63</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 080</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">12</div>
+      <div class="cell b">5</div>
+      <div class="cell b">9</div>
+      <div class="cell b">13</div>
+      <div class="cell b">1</div>
+      <div class="cell i">24</div>
+      <div class="cell i">29</div>
+      <div class="cell i">18</div>
+      <div class="cell i">26</div>
+      <div class="cell i">19</div>
+      <div class="cell n">43</div>
+      <div class="cell n">42</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">39</div>
+      <div class="cell n">37</div>
+      <div class="cell g">54</div>
+      <div class="cell g">49</div>
+      <div class="cell g">56</div>
+      <div class="cell g">57</div>
+      <div class="cell g">59</div>
+      <div class="cell o">64</div>
+      <div class="cell o">68</div>
+      <div class="cell o">71</div>
+      <div class="cell o">73</div>
+      <div class="cell o">66</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 081</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">3</div>
+      <div class="cell b">8</div>
+      <div class="cell b">2</div>
+      <div class="cell b">7</div>
+      <div class="cell b">12</div>
+      <div class="cell i">19</div>
+      <div class="cell i">16</div>
+      <div class="cell i">21</div>
+      <div class="cell i">24</div>
+      <div class="cell i">20</div>
+      <div class="cell n">34</div>
+      <div class="cell n">40</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">37</div>
+      <div class="cell n">33</div>
+      <div class="cell g">55</div>
+      <div class="cell g">50</div>
+      <div class="cell g">59</div>
+      <div class="cell g">54</div>
+      <div class="cell g">46</div>
+      <div class="cell o">63</div>
+      <div class="cell o">61</div>
+      <div class="cell o">73</div>
+      <div class="cell o">66</div>
+      <div class="cell o">65</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 082</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">1</div>
+      <div class="cell b">12</div>
+      <div class="cell b">4</div>
+      <div class="cell b">7</div>
+      <div class="cell b">11</div>
+      <div class="cell i">30</div>
+      <div class="cell i">19</div>
+      <div class="cell i">23</div>
+      <div class="cell i">29</div>
+      <div class="cell i">21</div>
+      <div class="cell n">44</div>
+      <div class="cell n">31</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">41</div>
+      <div class="cell n">45</div>
+      <div class="cell g">59</div>
+      <div class="cell g">53</div>
+      <div class="cell g">54</div>
+      <div class="cell g">52</div>
+      <div class="cell g">51</div>
+      <div class="cell o">65</div>
+      <div class="cell o">61</div>
+      <div class="cell o">62</div>
+      <div class="cell o">64</div>
+      <div class="cell o">74</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 083</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">7</div>
+      <div class="cell b">15</div>
+      <div class="cell b">11</div>
+      <div class="cell b">14</div>
+      <div class="cell b">8</div>
+      <div class="cell i">21</div>
+      <div class="cell i">17</div>
+      <div class="cell i">26</div>
+      <div class="cell i">24</div>
+      <div class="cell i">20</div>
+      <div class="cell n">36</div>
+      <div class="cell n">43</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">44</div>
+      <div class="cell n">38</div>
+      <div class="cell g">59</div>
+      <div class="cell g">47</div>
+      <div class="cell g">48</div>
+      <div class="cell g">49</div>
+      <div class="cell g">46</div>
+      <div class="cell o">69</div>
+      <div class="cell o">62</div>
+      <div class="cell o">74</div>
+      <div class="cell o">75</div>
+      <div class="cell o">65</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 084</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">12</div>
+      <div class="cell b">14</div>
+      <div class="cell b">5</div>
+      <div class="cell b">11</div>
+      <div class="cell b">9</div>
+      <div class="cell i">20</div>
+      <div class="cell i">26</div>
+      <div class="cell i">21</div>
+      <div class="cell i">29</div>
+      <div class="cell i">23</div>
+      <div class="cell n">35</div>
+      <div class="cell n">31</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">43</div>
+      <div class="cell n">45</div>
+      <div class="cell g">51</div>
+      <div class="cell g">46</div>
+      <div class="cell g">55</div>
+      <div class="cell g">53</div>
+      <div class="cell g">54</div>
+      <div class="cell o">75</div>
+      <div class="cell o">74</div>
+      <div class="cell o">63</div>
+      <div class="cell o">71</div>
+      <div class="cell o">62</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 085</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">11</div>
+      <div class="cell b">15</div>
+      <div class="cell b">2</div>
+      <div class="cell b">3</div>
+      <div class="cell b">7</div>
+      <div class="cell i">29</div>
+      <div class="cell i">23</div>
+      <div class="cell i">17</div>
+      <div class="cell i">28</div>
+      <div class="cell i">26</div>
+      <div class="cell n">37</div>
+      <div class="cell n">39</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">34</div>
+      <div class="cell n">41</div>
+      <div class="cell g">48</div>
+      <div class="cell g">58</div>
+      <div class="cell g">51</div>
+      <div class="cell g">54</div>
+      <div class="cell g">56</div>
+      <div class="cell o">69</div>
+      <div class="cell o">62</div>
+      <div class="cell o">72</div>
+      <div class="cell o">67</div>
+      <div class="cell o">74</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 086</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">12</div>
+      <div class="cell b">15</div>
+      <div class="cell b">11</div>
+      <div class="cell b">7</div>
+      <div class="cell b">5</div>
+      <div class="cell i">26</div>
+      <div class="cell i">29</div>
+      <div class="cell i">20</div>
+      <div class="cell i">17</div>
+      <div class="cell i">19</div>
+      <div class="cell n">45</div>
+      <div class="cell n">41</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">44</div>
+      <div class="cell n">38</div>
+      <div class="cell g">59</div>
+      <div class="cell g">51</div>
+      <div class="cell g">50</div>
+      <div class="cell g">57</div>
+      <div class="cell g">52</div>
+      <div class="cell o">67</div>
+      <div class="cell o">73</div>
+      <div class="cell o">64</div>
+      <div class="cell o">74</div>
+      <div class="cell o">68</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 087</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">7</div>
+      <div class="cell b">6</div>
+      <div class="cell b">9</div>
+      <div class="cell b">2</div>
+      <div class="cell b">12</div>
+      <div class="cell i">28</div>
+      <div class="cell i">19</div>
+      <div class="cell i">20</div>
+      <div class="cell i">17</div>
+      <div class="cell i">18</div>
+      <div class="cell n">37</div>
+      <div class="cell n">39</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">41</div>
+      <div class="cell n">42</div>
+      <div class="cell g">47</div>
+      <div class="cell g">50</div>
+      <div class="cell g">57</div>
+      <div class="cell g">53</div>
+      <div class="cell g">51</div>
+      <div class="cell o">75</div>
+      <div class="cell o">66</div>
+      <div class="cell o">72</div>
+      <div class="cell o">69</div>
+      <div class="cell o">63</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 088</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">3</div>
+      <div class="cell b">2</div>
+      <div class="cell b">14</div>
+      <div class="cell b">15</div>
+      <div class="cell b">8</div>
+      <div class="cell i">17</div>
+      <div class="cell i">18</div>
+      <div class="cell i">30</div>
+      <div class="cell i">23</div>
+      <div class="cell i">21</div>
+      <div class="cell n">32</div>
+      <div class="cell n">38</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">31</div>
+      <div class="cell n">42</div>
+      <div class="cell g">47</div>
+      <div class="cell g">55</div>
+      <div class="cell g">56</div>
+      <div class="cell g">60</div>
+      <div class="cell g">52</div>
+      <div class="cell o">68</div>
+      <div class="cell o">61</div>
+      <div class="cell o">64</div>
+      <div class="cell o">66</div>
+      <div class="cell o">70</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 089</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">13</div>
+      <div class="cell b">3</div>
+      <div class="cell b">2</div>
+      <div class="cell b">5</div>
+      <div class="cell b">7</div>
+      <div class="cell i">20</div>
+      <div class="cell i">16</div>
+      <div class="cell i">19</div>
+      <div class="cell i">17</div>
+      <div class="cell i">27</div>
+      <div class="cell n">42</div>
+      <div class="cell n">34</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">45</div>
+      <div class="cell n">41</div>
+      <div class="cell g">49</div>
+      <div class="cell g">54</div>
+      <div class="cell g">50</div>
+      <div class="cell g">56</div>
+      <div class="cell g">53</div>
+      <div class="cell o">67</div>
+      <div class="cell o">63</div>
+      <div class="cell o">61</div>
+      <div class="cell o">73</div>
+      <div class="cell o">74</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 090</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">5</div>
+      <div class="cell b">4</div>
+      <div class="cell b">8</div>
+      <div class="cell b">3</div>
+      <div class="cell b">6</div>
+      <div class="cell i">28</div>
+      <div class="cell i">25</div>
+      <div class="cell i">30</div>
+      <div class="cell i">18</div>
+      <div class="cell i">17</div>
+      <div class="cell n">38</div>
+      <div class="cell n">45</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">41</div>
+      <div class="cell n">39</div>
+      <div class="cell g">58</div>
+      <div class="cell g">59</div>
+      <div class="cell g">53</div>
+      <div class="cell g">60</div>
+      <div class="cell g">54</div>
+      <div class="cell o">70</div>
+      <div class="cell o">61</div>
+      <div class="cell o">65</div>
+      <div class="cell o">68</div>
+      <div class="cell o">71</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 091</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">13</div>
+      <div class="cell b">11</div>
+      <div class="cell b">7</div>
+      <div class="cell b">6</div>
+      <div class="cell b">10</div>
+      <div class="cell i">27</div>
+      <div class="cell i">17</div>
+      <div class="cell i">24</div>
+      <div class="cell i">26</div>
+      <div class="cell i">21</div>
+      <div class="cell n">32</div>
+      <div class="cell n">41</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">38</div>
+      <div class="cell n">45</div>
+      <div class="cell g">56</div>
+      <div class="cell g">46</div>
+      <div class="cell g">47</div>
+      <div class="cell g">51</div>
+      <div class="cell g">57</div>
+      <div class="cell o">65</div>
+      <div class="cell o">70</div>
+      <div class="cell o">72</div>
+      <div class="cell o">66</div>
+      <div class="cell o">69</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 092</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">1</div>
+      <div class="cell b">5</div>
+      <div class="cell b">9</div>
+      <div class="cell b">3</div>
+      <div class="cell b">12</div>
+      <div class="cell i">17</div>
+      <div class="cell i">25</div>
+      <div class="cell i">30</div>
+      <div class="cell i">20</div>
+      <div class="cell i">28</div>
+      <div class="cell n">38</div>
+      <div class="cell n">35</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">45</div>
+      <div class="cell n">32</div>
+      <div class="cell g">60</div>
+      <div class="cell g">53</div>
+      <div class="cell g">57</div>
+      <div class="cell g">51</div>
+      <div class="cell g">54</div>
+      <div class="cell o">61</div>
+      <div class="cell o">67</div>
+      <div class="cell o">71</div>
+      <div class="cell o">75</div>
+      <div class="cell o">63</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 093</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">13</div>
+      <div class="cell b">4</div>
+      <div class="cell b">12</div>
+      <div class="cell b">1</div>
+      <div class="cell b">8</div>
+      <div class="cell i">26</div>
+      <div class="cell i">21</div>
+      <div class="cell i">16</div>
+      <div class="cell i">25</div>
+      <div class="cell i">17</div>
+      <div class="cell n">37</div>
+      <div class="cell n">44</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">33</div>
+      <div class="cell n">41</div>
+      <div class="cell g">58</div>
+      <div class="cell g">56</div>
+      <div class="cell g">49</div>
+      <div class="cell g">60</div>
+      <div class="cell g">46</div>
+      <div class="cell o">61</div>
+      <div class="cell o">69</div>
+      <div class="cell o">74</div>
+      <div class="cell o">75</div>
+      <div class="cell o">68</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 094</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">10</div>
+      <div class="cell b">9</div>
+      <div class="cell b">12</div>
+      <div class="cell b">11</div>
+      <div class="cell b">1</div>
+      <div class="cell i">22</div>
+      <div class="cell i">19</div>
+      <div class="cell i">17</div>
+      <div class="cell i">21</div>
+      <div class="cell i">23</div>
+      <div class="cell n">31</div>
+      <div class="cell n">32</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">37</div>
+      <div class="cell n">33</div>
+      <div class="cell g">51</div>
+      <div class="cell g">48</div>
+      <div class="cell g">49</div>
+      <div class="cell g">60</div>
+      <div class="cell g">55</div>
+      <div class="cell o">63</div>
+      <div class="cell o">73</div>
+      <div class="cell o">69</div>
+      <div class="cell o">66</div>
+      <div class="cell o">71</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 095</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">14</div>
+      <div class="cell b">15</div>
+      <div class="cell b">13</div>
+      <div class="cell b">5</div>
+      <div class="cell b">9</div>
+      <div class="cell i">21</div>
+      <div class="cell i">30</div>
+      <div class="cell i">22</div>
+      <div class="cell i">28</div>
+      <div class="cell i">24</div>
+      <div class="cell n">40</div>
+      <div class="cell n">32</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">45</div>
+      <div class="cell n">35</div>
+      <div class="cell g">46</div>
+      <div class="cell g">52</div>
+      <div class="cell g">58</div>
+      <div class="cell g">53</div>
+      <div class="cell g">48</div>
+      <div class="cell o">71</div>
+      <div class="cell o">72</div>
+      <div class="cell o">69</div>
+      <div class="cell o">75</div>
+      <div class="cell o">66</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 096</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">6</div>
+      <div class="cell b">10</div>
+      <div class="cell b">11</div>
+      <div class="cell b">7</div>
+      <div class="cell b">9</div>
+      <div class="cell i">25</div>
+      <div class="cell i">20</div>
+      <div class="cell i">30</div>
+      <div class="cell i">21</div>
+      <div class="cell i">24</div>
+      <div class="cell n">31</div>
+      <div class="cell n">36</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">45</div>
+      <div class="cell n">43</div>
+      <div class="cell g">49</div>
+      <div class="cell g">55</div>
+      <div class="cell g">54</div>
+      <div class="cell g">50</div>
+      <div class="cell g">58</div>
+      <div class="cell o">61</div>
+      <div class="cell o">71</div>
+      <div class="cell o">63</div>
+      <div class="cell o">66</div>
+      <div class="cell o">73</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 097</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">9</div>
+      <div class="cell b">14</div>
+      <div class="cell b">6</div>
+      <div class="cell b">5</div>
+      <div class="cell b">10</div>
+      <div class="cell i">19</div>
+      <div class="cell i">29</div>
+      <div class="cell i">17</div>
+      <div class="cell i">18</div>
+      <div class="cell i">28</div>
+      <div class="cell n">31</div>
+      <div class="cell n">33</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">35</div>
+      <div class="cell n">43</div>
+      <div class="cell g">53</div>
+      <div class="cell g">56</div>
+      <div class="cell g">57</div>
+      <div class="cell g">50</div>
+      <div class="cell g">55</div>
+      <div class="cell o">63</div>
+      <div class="cell o">71</div>
+      <div class="cell o">67</div>
+      <div class="cell o">73</div>
+      <div class="cell o">69</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 098</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">9</div>
+      <div class="cell b">13</div>
+      <div class="cell b">8</div>
+      <div class="cell b">10</div>
+      <div class="cell b">14</div>
+      <div class="cell i">16</div>
+      <div class="cell i">20</div>
+      <div class="cell i">18</div>
+      <div class="cell i">29</div>
+      <div class="cell i">17</div>
+      <div class="cell n">31</div>
+      <div class="cell n">38</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">45</div>
+      <div class="cell n">43</div>
+      <div class="cell g">53</div>
+      <div class="cell g">47</div>
+      <div class="cell g">60</div>
+      <div class="cell g">58</div>
+      <div class="cell g">56</div>
+      <div class="cell o">67</div>
+      <div class="cell o">66</div>
+      <div class="cell o">72</div>
+      <div class="cell o">70</div>
+      <div class="cell o">68</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+<div class="page">
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 099</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">12</div>
+      <div class="cell b">2</div>
+      <div class="cell b">8</div>
+      <div class="cell b">14</div>
+      <div class="cell b">6</div>
+      <div class="cell i">22</div>
+      <div class="cell i">25</div>
+      <div class="cell i">27</div>
+      <div class="cell i">23</div>
+      <div class="cell i">30</div>
+      <div class="cell n">36</div>
+      <div class="cell n">41</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">39</div>
+      <div class="cell n">44</div>
+      <div class="cell g">48</div>
+      <div class="cell g">49</div>
+      <div class="cell g">56</div>
+      <div class="cell g">58</div>
+      <div class="cell g">60</div>
+      <div class="cell o">72</div>
+      <div class="cell o">67</div>
+      <div class="cell o">70</div>
+      <div class="cell o">61</div>
+      <div class="cell o">75</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+  <hr class="cutline" />
+  <div class="card">
+    <span class="suit tl">♠</span><span class="suit tr">♥</span><span class="suit bl">♦</span><span class="suit br">♣</span>
+    <div class="card-head">
+      <div class="event">BINGO NIGHT</div>
+      <div class="serial">No. 100</div>
+    </div>
+    <div class="letters"><div class="lt b">B</div><div class="lt i">I</div><div class="lt n">N</div><div class="lt g">G</div><div class="lt o">O</div></div>
+    <div class="grid">
+      <div class="cell b">13</div>
+      <div class="cell b">2</div>
+      <div class="cell b">7</div>
+      <div class="cell b">15</div>
+      <div class="cell b">11</div>
+      <div class="cell i">23</div>
+      <div class="cell i">29</div>
+      <div class="cell i">25</div>
+      <div class="cell i">26</div>
+      <div class="cell i">22</div>
+      <div class="cell n">33</div>
+      <div class="cell n">41</div>
+      <div class="cell free"><div class="free-badge"><div class="star">★</div><div class="word">FREE</div></div></div>
+      <div class="cell n">42</div>
+      <div class="cell n">36</div>
+      <div class="cell g">48</div>
+      <div class="cell g">47</div>
+      <div class="cell g">52</div>
+      <div class="cell g">54</div>
+      <div class="cell g">51</div>
+      <div class="cell o">69</div>
+      <div class="cell o">65</div>
+      <div class="cell o">68</div>
+      <div class="cell o">63</div>
+      <div class="cell o">67</div>
+    </div>
+    <div class="card-foot">
+      <span class="tag">Mark a line to win</span>
+      <span class="dots">&bull; &bull; &bull;</span>
+      <span>5 &times; 5</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<!-- Bingo Caller — Glassmorphism edition. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bingo · Aurora</title>
+<style>
+  :root {
+    --glass: rgba(255,255,255,.14);
+    --glass-line: rgba(255,255,255,.35);
+    --text: #1c2233;
+    --muted: #5a6378;
+    --accent: #6d5efc;
+    --accent2: #ff7ac6;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    background: #eef1ff;
+    min-height: 100%; overflow-x: hidden; position: relative;
+  }
+  /* aurora blobs */
+  .aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; filter: blur(60px); }
+  .aurora i { position: absolute; display: block; border-radius: 50%; opacity: .65; }
+  .aurora i:nth-child(1){ width: 480px; height: 480px; background: #8a7bff; top: -120px; left: -80px; }
+  .aurora i:nth-child(2){ width: 520px; height: 520px; background: #ff9ad4; bottom: -160px; right: -60px; }
+  .aurora i:nth-child(3){ width: 380px; height: 380px; background: #6ad7ff; top: 40%; left: 55%; }
+  .aurora i:nth-child(4){ width: 300px; height: 300px; background: #c2b5ff; top: 10%; right: 18%; }
+
+  .wrap { position: relative; z-index: 1; max-width: 1140px; margin: 0 auto; padding: 34px 20px 60px; }
+
+  header { text-align: center; margin-bottom: 26px; }
+  .title {
+    font-size: clamp(34px, 7vw, 64px); font-weight: 800; letter-spacing: -0.02em; margin: 0;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .subtitle { margin: 6px 0 0; color: var(--muted); letter-spacing: .28em; font-size: 12px; text-transform: uppercase; }
+
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--glass-line);
+    border-radius: 26px;
+    box-shadow: 0 20px 50px rgba(60,50,120,.18), inset 0 1px 0 rgba(255,255,255,.55);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+  }
+
+  .stage { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 880px) { .stage { grid-template-columns: 1fr; } }
+
+  .panel { padding: 24px; }
+
+  /* draw card with flip reveal */
+  .reveal { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+  .card-flip { width: clamp(180px, 44vw, 240px); height: clamp(220px, 52vw, 290px); perspective: 1000px; }
+  .card-inner {
+    position: relative; width: 100%; height: 100%; transition: transform .6s cubic-bezier(.4,.2,.2,1);
+    transform-style: preserve-3d;
+  }
+  .card-inner.flip { transform: rotateY(360deg); }
+  .face {
+    position: absolute; inset: 0; border-radius: 22px; display: grid; place-items: center; align-content: center;
+    backface-visibility: hidden; box-shadow: 0 14px 36px rgba(80,60,160,.28);
+  }
+  .face.front {
+    background: linear-gradient(160deg, #ffffff 0%, #f3f0ff 100%);
+    border: 1px solid rgba(255,255,255,.7);
+  }
+  .face .card-letter {
+    font-size: clamp(26px, 6vw, 40px); font-weight: 800; line-height: 1; letter-spacing: .14em;
+    background: linear-gradient(160deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; background-clip: text; color: transparent; opacity: .9;
+  }
+  .face .big {
+    font-size: clamp(82px, 19vw, 128px); font-weight: 800; line-height: 1;
+    background: linear-gradient(160deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .face.empty .card-letter { display: none; }
+  .face.empty .big { font-size: clamp(20px,5vw,30px); }
+
+  .btn-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  button { font-family: inherit; cursor: pointer; border-radius: 999px; font-weight: 700; transition: transform .08s, box-shadow .2s, background .2s; border: none; }
+  button:active { transform: translateY(2px); }
+  .draw-btn {
+    font-size: clamp(18px,3.6vw,22px); padding: 15px 44px; color: #fff;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    box-shadow: 0 12px 28px rgba(109,94,252,.42);
+  }
+  .draw-btn:hover { box-shadow: 0 16px 36px rgba(109,94,252,.55); }
+  .draw-btn:disabled { background: #b9bccb; box-shadow: none; cursor: not-allowed; }
+  .mini {
+    font-size: 13px; padding: 9px 16px; color: var(--text);
+    background: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.7);
+  }
+  .mini:hover { background: rgba(255,255,255,.8); }
+
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 22px; }
+  .stat { text-align: center; padding: 14px 6px; border-radius: 16px; background: rgba(255,255,255,.4); border: 1px solid rgba(255,255,255,.6); }
+  .stat b { display: block; font-size: 28px; color: var(--accent); }
+  .stat span { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+
+  .history-label { margin: 22px 0 10px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  .history { display: flex; flex-wrap: wrap; gap: 8px; min-height: 42px; }
+  .chip {
+    width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    font-weight: 700; font-size: 13px; color: var(--accent);
+    background: rgba(255,255,255,.65); border: 1px solid rgba(255,255,255,.8);
+    box-shadow: 0 4px 12px rgba(80,60,160,.12); animation: pop .35s ease;
+  }
+  .chip:first-child { color:#fff; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-color: transparent; }
+  @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+
+  .board-head { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; margin-bottom: 7px; }
+  .bh {
+    text-align: center; font-weight: 800; font-size: clamp(22px, 4.4vw, 34px); color: #fff;
+    border-radius: 14px; padding: 8px 0; letter-spacing: .04em;
+    background: linear-gradient(160deg, var(--accent), var(--accent2));
+    box-shadow: 0 8px 18px rgba(109,94,252,.32);
+  }
+  .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+  .cell {
+    padding: 10px 0; border-radius: 12px; display: grid; place-items: center;
+    font-weight: 700; font-size: clamp(15px, 2.6vw, 21px); cursor: pointer; user-select: none;
+    color: var(--text); background: rgba(255,255,255,.45);
+    border: 1px solid rgba(255,255,255,.6); transition: transform .12s, background .2s, color .2s, box-shadow .2s;
+  }
+  .cell:hover { transform: translateY(-2px); background: rgba(255,255,255,.75); }
+  .cell.called {
+    color: #fff; border-color: transparent;
+    background: linear-gradient(160deg, var(--accent), var(--accent2));
+    box-shadow: 0 6px 16px rgba(109,94,252,.4);
+  }
+  .cell.justdrawn { animation: ring .9s ease; }
+  @keyframes ring {
+    0%   { box-shadow: 0 0 0 0 rgba(255,122,198,.7); }
+    100% { box-shadow: 0 0 0 14px rgba(255,122,198,0); }
+  }
+
+  .footer { text-align: center; margin-top: 30px; color: var(--muted); font-size: 12px; }
+
+  .confetti { position: fixed; top: -12px; width: 9px; height: 13px; z-index: 5; pointer-events: none; border-radius: 2px; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+  /* Fit the whole board on screen (desktop) — no page scrolling */
+  @media (min-width: 881px) {
+    html, body { height: 100%; overflow: hidden; }
+    .wrap { height: 100vh; display: flex; flex-direction: column; padding: 16px 20px 12px; overflow: hidden; }
+    header { margin-bottom: 10px; }
+    .title { font-size: clamp(28px, 4.2vw, 52px); }
+    .stage { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: 18px; }
+    .panel { padding: 18px; }
+    .board-panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    .board { flex: 1 1 auto; min-height: 0; grid-template-rows: repeat(15, minmax(0, 1fr)); gap: 6px; }
+    .cell { padding: 0; min-height: 0; }
+    .footer { margin-top: 8px; }
+    .stage > .panel:not(.board-panel) { overflow: auto; }  /* right column scrolls if a short viewport can't fit it */
+  }
+</style>
+</head>
+<body>
+  <div class="aurora"><i></i><i></i><i></i><i></i></div>
+  <div class="wrap">
+    <header>
+      <h1 class="title">Bingo</h1>
+      <p class="subtitle">Aurora &nbsp;·&nbsp; Number Caller</p>
+    </header>
+
+    <div class="stage">
+      <section class="glass panel board-panel">
+        <div class="board-head" id="boardHead"></div>
+        <div class="board" id="board"></div>
+      </section>
+
+      <section class="glass panel">
+        <div class="reveal">
+          <div class="card-flip">
+            <div class="card-inner" id="cardInner">
+              <div class="face front" id="cardFront"><span class="card-letter" id="bigLetter"></span><span class="big" id="bigNum">—</span></div>
+            </div>
+          </div>
+          <div class="btn-row"><button class="draw-btn" id="drawBtn" onclick="draw()">Draw</button></div>
+          <div class="btn-row">
+            <button class="mini" onclick="undo()">↩ Undo</button>
+            <button class="mini" onclick="resetGame()">⟲ Reset</button>
+            <button class="mini" id="muteBtn" onclick="toggleMute()">🔊 Sound</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><b id="sLast">—</b><span>Last</span></div>
+          <div class="stat"><b id="sCalled">0</b><span>Called</span></div>
+          <div class="stat"><b id="sLeft">75</b><span>Remaining</span></div>
+        </div>
+
+        <p class="history-label">Recent draws</p>
+        <div class="history" id="history"></div>
+      </section>
+    </div>
+
+    <p class="footer">Tap any number to mark it manually</p>
+  </div>
+
+<script>
+  const KEY = "bingo:glass";
+  const MAX = 75;
+  let called = [];
+  let manual = new Set();
+  let muted = false;
+  const $ = id => document.getElementById(id);
+  const calledSet = () => new Set([...called, ...manual]);
+
+  const LETTERS = ["B", "I", "N", "G", "O"];
+  const letterOf = n => LETTERS[Math.floor((n - 1) / 15)]; // 1-15→B, 16-30→I, …
+  const label = n => letterOf(n) + "-" + n;                // e.g. "B-12"
+
+  function buildBoard() {
+    $("boardHead").innerHTML = LETTERS.map(l => `<div class="bh">${l}</div>`).join("");
+    const b = $("board"); b.innerHTML = "";
+    // 5 lettered columns × 15 rows; CSS grid fills row-major
+    for (let r = 0; r < 15; r++) {
+      for (let col = 0; col < 5; col++) {
+        const n = col * 15 + r + 1;
+        const c = document.createElement("div");
+        c.className = "cell"; c.id = "cell" + n; c.textContent = n;
+        c.onclick = () => toggleManual(n);
+        b.appendChild(c);
+      }
+    }
+  }
+  function toggleManual(n) {
+    if (called.includes(n)) called = called.filter(x => x !== n);
+    else if (manual.has(n)) manual.delete(n);
+    else manual.add(n);
+    render(); save();
+  }
+  function draw() {
+    const taken = calledSet(); const pool = [];
+    for (let n = 1; n <= MAX; n++) if (!taken.has(n)) pool.push(n);
+    if (!pool.length) return;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    called.push(pick); render(); animateDraw(pick); sound(); save();
+  }
+  function undo() { if (!called.length) return; called.pop(); render(); save(); }
+  function resetGame() { called = []; manual.clear(); $("bigNum").textContent = "—"; $("bigLetter").textContent = ""; render(); save(); }
+
+  function render() {
+    const taken = calledSet();
+    for (let n = 1; n <= MAX; n++) {
+      const c = $("cell" + n);
+      c.classList.toggle("called", taken.has(n));
+      c.classList.remove("justdrawn");
+    }
+    const last = called[called.length - 1];
+    $("sLast").textContent = last != null ? label(last) : "—";
+    $("sCalled").textContent = taken.size;
+    $("sLeft").textContent = MAX - taken.size;
+    if (last != null) {
+      $("bigLetter").textContent = letterOf(last);
+      $("bigNum").textContent = last;
+      $("cardFront").classList.remove("empty");
+    }
+
+    const h = $("history"); h.innerHTML = "";
+    [...called].slice(-10).reverse().forEach(n => {
+      const chip = document.createElement("div"); chip.className = "chip"; chip.textContent = letterOf(n) + n; h.appendChild(chip);
+    });
+
+    const full = taken.size >= MAX;
+    $("drawBtn").disabled = full;
+    if (full) { $("cardFront").classList.add("empty"); $("bigLetter").textContent = ""; $("bigNum").textContent = "All drawn"; }
+  }
+
+  function animateDraw(pick) {
+    const inner = $("cardInner");
+    $("bigLetter").textContent = letterOf(pick);
+    $("bigNum").textContent = pick;
+    inner.classList.remove("flip"); void inner.offsetWidth; inner.classList.add("flip");
+    const cell = $("cell" + pick);
+    cell.classList.remove("justdrawn"); void cell.offsetWidth; cell.classList.add("justdrawn");
+    confetti();
+  }
+
+  let audioCtx;
+  function sound() {
+    if (muted) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const t0 = audioCtx.currentTime;
+      // soft swoosh
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(220, t0); o.frequency.exponentialRampToValueAtTime(660, t0 + 0.3);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.06, t0 + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.35);
+      o.connect(g); g.connect(audioCtx.destination); o.start(t0); o.stop(t0 + 0.4);
+      // gentle bell on settle
+      [880, 1318.5].forEach((f, i) => {
+        const oo = audioCtx.createOscillator(), gg = audioCtx.createGain();
+        oo.type = "sine"; oo.frequency.value = f; oo.connect(gg); gg.connect(audioCtx.destination);
+        const t = t0 + 0.45 + i * 0.05;
+        gg.gain.setValueAtTime(0.0001, t); gg.gain.exponentialRampToValueAtTime(0.12, t + 0.02);
+        gg.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+        oo.start(t); oo.stop(t + 0.65);
+      });
+    } catch (e) {}
+  }
+  function toggleMute() { muted = !muted; $("muteBtn").textContent = muted ? "🔇 Muted" : "🔊 Sound"; }
+
+  function confetti() {
+    const colors = ["#6d5efc", "#ff7ac6", "#6ad7ff", "#ffffff"];
+    for (let i = 0; i < 24; i++) {
+      const c = document.createElement("div"); c.className = "confetti";
+      c.style.left = Math.random() * 100 + "vw"; c.style.background = colors[i % colors.length];
+      c.style.animation = `fall ${1 + Math.random() * 0.8}s ease-in forwards`;
+      c.style.animationDelay = Math.random() * 0.2 + "s";
+      document.body.appendChild(c); setTimeout(() => c.remove(), 2200);
+    }
+  }
+
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ called, manual: [...manual] })); } catch (e) {} }
+  function load() {
+    try {
+      const d = JSON.parse(localStorage.getItem(KEY) || "{}");
+      if (Array.isArray(d.called)) called = d.called;
+      if (Array.isArray(d.manual)) manual = new Set(d.manual);
+    } catch (e) {}
+  }
+
+  buildBoard(); load(); render();
+</script>
+</body>
+</html>

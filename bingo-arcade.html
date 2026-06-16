@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<!-- Bingo Caller — Retro Arcade edition. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BINGO · Arcade</title>
+<style>
+  :root {
+    --red: #ff3b3b;
+    --yellow: #ffd400;
+    --blue: #2bd1ff;
+    --pink: #ff4fa3;
+    --bulb: #fff2a8;
+    --panel: #1b1140;
+    --panel2: #271a59;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: "Arial Black", "Arial", sans-serif;
+    color: #fff;
+    background:
+      repeating-linear-gradient(45deg, #2a0d4e 0 28px, #2f1056 28px 56px);
+    background-attachment: fixed;
+    min-height: 100%; overflow-x: hidden;
+  }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 26px 18px 60px; }
+
+  header { text-align: center; margin-bottom: 22px; }
+  .marquee-title {
+    display: inline-block; padding: 14px 30px; border-radius: 18px;
+    background: var(--panel); border: 6px solid var(--yellow);
+    box-shadow: 0 0 0 6px var(--panel), 0 10px 0 rgba(0,0,0,.4), 0 0 40px rgba(255,212,0,.4);
+  }
+  .marquee-title h1 {
+    margin: 0; font-size: clamp(36px, 8vw, 76px); letter-spacing: .06em; line-height: 1;
+  }
+  .marquee-title h1 span { display: inline-block; }
+  .marquee-title h1 span:nth-child(1){ color: var(--red); }
+  .marquee-title h1 span:nth-child(2){ color: var(--yellow); }
+  .marquee-title h1 span:nth-child(3){ color: var(--blue); }
+  .marquee-title h1 span:nth-child(4){ color: var(--pink); }
+  .marquee-title h1 span:nth-child(5){ color: #7CFC00; }
+  .marquee-title h1 span { text-shadow: 0 4px 0 #000, 0 0 14px currentColor; animation: blinkLetter 1.2s infinite; }
+  .marquee-title h1 span:nth-child(2){ animation-delay: .2s; }
+  .marquee-title h1 span:nth-child(3){ animation-delay: .4s; }
+  .marquee-title h1 span:nth-child(4){ animation-delay: .6s; }
+  .marquee-title h1 span:nth-child(5){ animation-delay: .8s; }
+  @keyframes blinkLetter { 0%,100%{ filter: brightness(1); } 50%{ filter: brightness(1.6); } }
+  .subtitle { margin: 12px 0 0; color: var(--yellow); letter-spacing: .3em; font-size: 12px; }
+
+  .stage { display: grid; grid-template-columns: 1.1fr 1fr; gap: 22px; align-items: start; }
+  @media (max-width: 880px) { .stage { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: linear-gradient(180deg, var(--panel2), var(--panel));
+    border: 5px solid #4a2fa6; border-radius: 18px; padding: 20px;
+    box-shadow: 0 10px 0 rgba(0,0,0,.4), inset 0 0 30px rgba(0,0,0,.4);
+  }
+
+  /* marquee bulb frame around the number */
+  .reveal { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .display {
+    position: relative; width: clamp(200px, 50vw, 280px); height: clamp(200px, 50vw, 280px);
+    border-radius: 16px; background: #07021a; display: grid; place-items: center; align-content: center;
+    border: 5px solid #000; box-shadow: inset 0 0 40px rgba(43,209,255,.25);
+  }
+  .bulbs { position: absolute; inset: 0; pointer-events: none; }
+  .bulbs i {
+    position: absolute; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--bulb); box-shadow: 0 0 8px 2px var(--bulb);
+    transform: translate(-50%, -50%);
+  }
+  .display.run .bulbs i { animation: chase 0.6s linear infinite; }
+  @keyframes chase { 0%,100%{ opacity: 1; } 50%{ opacity: .25; } }
+  .display .disp-letter {
+    font-size: clamp(26px, 7vw, 46px); line-height: 1; color: var(--red); font-weight: 900;
+    font-family: "Courier New", monospace; letter-spacing: .12em;
+    text-shadow: 0 0 14px var(--red), 0 3px 0 #6a0000;
+  }
+  .display .big {
+    font-size: clamp(80px, 21vw, 138px); line-height: 1; color: var(--yellow);
+    text-shadow: 0 0 18px var(--yellow), 0 6px 0 #a35b00; font-family: "Courier New", monospace; font-weight: 900;
+  }
+  .display.empty .disp-letter { display: none; }
+  .display.empty .big { font-size: clamp(22px,5vw,32px); color: var(--red); text-shadow: 0 0 14px var(--red); }
+  .display .big.tick { animation: tick .08s steps(1); }
+  @keyframes tick { 0%{ transform: scale(1.15); } 100%{ transform: scale(1); } }
+
+  .btn-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  button {
+    font-family: inherit; cursor: pointer; border-radius: 12px; font-weight: 900; letter-spacing: .05em;
+    transition: transform .06s, filter .2s; border: 3px solid #000;
+  }
+  button:active { transform: translateY(3px); }
+  .draw-btn {
+    font-size: clamp(20px,4vw,28px); padding: 16px 46px; color: #2a0a00;
+    background: linear-gradient(180deg, #ffe98a, var(--yellow));
+    box-shadow: 0 6px 0 #a37a00, 0 0 26px rgba(255,212,0,.5);
+  }
+  .draw-btn:hover { filter: brightness(1.08); }
+  .draw-btn:active { box-shadow: 0 2px 0 #a37a00; }
+  .draw-btn:disabled { filter: grayscale(.7) brightness(.6); cursor: not-allowed; box-shadow: 0 6px 0 #333; }
+  .mini {
+    font-size: 13px; padding: 10px 16px; color: #fff;
+    background: linear-gradient(180deg, #5a3fc0, #3d2790); box-shadow: 0 4px 0 #1c1147;
+  }
+  .mini:active { box-shadow: 0 1px 0 #1c1147; }
+  .mini:hover { filter: brightness(1.12); }
+
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 20px; }
+  .stat { text-align: center; padding: 12px 6px; border-radius: 12px; background: #07021a; border: 3px solid #000; }
+  .stat b { display: block; font-size: 28px; color: var(--blue); font-family: "Courier New", monospace; }
+  .stat span { font-size: 10px; letter-spacing: .14em; color: var(--yellow); }
+
+  .history-label { margin: 22px 0 10px; font-size: 11px; letter-spacing: .2em; color: var(--yellow); }
+  .history { display: flex; flex-wrap: wrap; gap: 8px; min-height: 44px; }
+  .chip {
+    width: 42px; height: 42px; border-radius: 8px; display: grid; place-items: center;
+    font-weight: 900; font-size: 14px; color: #07021a; font-family: "Courier New", monospace;
+    background: var(--blue); border: 3px solid #000; box-shadow: 0 3px 0 #0a6a86; animation: pop .3s ease;
+  }
+  .chip:first-child { background: var(--red); box-shadow: 0 3px 0 #8a0000; color: #fff; }
+  @keyframes pop { from { transform: scale(0) rotate(-12deg); } to { transform: scale(1); } }
+
+  .board-head { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 6px; }
+  .bh {
+    text-align: center; font-weight: 900; font-size: clamp(22px, 4.4vw, 34px); color: #07021a;
+    border-radius: 8px; padding: 6px 0; border: 3px solid #000; font-family: "Courier New", monospace;
+    text-shadow: 0 1px 0 rgba(255,255,255,.35);
+  }
+  .bh.c0 { background: var(--red); color: #fff; box-shadow: 0 3px 0 #8a0000; }
+  .bh.c1 { background: var(--yellow); box-shadow: 0 3px 0 #a37a00; }
+  .bh.c2 { background: var(--blue); box-shadow: 0 3px 0 #0a6a86; }
+  .bh.c3 { background: var(--pink); color: #fff; box-shadow: 0 3px 0 #9c1860; }
+  .bh.c4 { background: #7CFC00; box-shadow: 0 3px 0 #3f8a00; }
+  .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .cell {
+    padding: 9px 0; border-radius: 8px; display: grid; place-items: center;
+    font-weight: 900; font-size: clamp(15px, 2.6vw, 21px); cursor: pointer; user-select: none;
+    color: #cdb8ff; background: #2a1a63; border: 3px solid #000;
+    font-family: "Courier New", monospace; transition: transform .1s, background .15s, color .15s;
+  }
+  .cell:hover { transform: translateY(-2px); background: #3a2585; }
+  .cell.called {
+    color: #2a0a00; background: linear-gradient(180deg, #ffe98a, var(--yellow));
+    box-shadow: inset 0 0 0 2px #000, 0 0 12px rgba(255,212,0,.6);
+  }
+  .cell.justdrawn { animation: pulse .8s ease 2; }
+  @keyframes pulse {
+    0%,100% { box-shadow: inset 0 0 0 2px #000, 0 0 0 0 var(--red); }
+    50%     { box-shadow: inset 0 0 0 2px #000, 0 0 0 5px var(--red); }
+  }
+
+  .footer { text-align: center; margin-top: 30px; color: #b79bff; font-size: 12px; }
+
+  .confetti { position: fixed; top: -12px; width: 11px; height: 11px; z-index: 5; pointer-events: none; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+  /* Fit the whole board on screen (desktop) — no page scrolling */
+  @media (min-width: 881px) {
+    html, body { height: 100%; overflow: hidden; }
+    .wrap { height: 100vh; display: flex; flex-direction: column; padding: 14px 18px 12px; overflow: hidden; }
+    header { margin-bottom: 8px; }
+    .marquee-title { padding: 8px 24px; }
+    .marquee-title h1 { font-size: clamp(30px, 5vw, 52px); }
+    .subtitle { margin-top: 8px; }
+    .stage { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: 16px; }
+    .panel { padding: 14px; }
+    .board-panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    .board { flex: 1 1 auto; min-height: 0; grid-template-rows: repeat(15, minmax(0, 1fr)); gap: 5px; }
+    .cell { padding: 0; min-height: 0; }
+    .footer { margin-top: 8px; }
+    .stage > .panel:not(.board-panel) { overflow: auto; }  /* right column scrolls if a short viewport can't fit it */
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="marquee-title">
+        <h1><span>B</span><span>I</span><span>N</span><span>G</span><span>O</span></h1>
+      </div>
+      <p class="subtitle">★ RETRO ARCADE CALLER ★</p>
+    </header>
+
+    <div class="stage">
+      <section class="panel board-panel">
+        <div class="board-head" id="boardHead"></div>
+        <div class="board" id="board"></div>
+      </section>
+
+      <section class="panel">
+        <div class="reveal">
+          <div class="display" id="display">
+            <div class="bulbs" id="bulbs"></div>
+            <span class="disp-letter" id="dispLetter"></span>
+            <span class="big" id="bigNum">--</span>
+          </div>
+          <div class="btn-row"><button class="draw-btn" id="drawBtn" onclick="draw()">PLAY</button></div>
+          <div class="btn-row">
+            <button class="mini" onclick="undo()">↩ UNDO</button>
+            <button class="mini" onclick="resetGame()">⟲ RESET</button>
+            <button class="mini" id="muteBtn" onclick="toggleMute()">🔊 SOUND</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><b id="sLast">--</b><span>LAST</span></div>
+          <div class="stat"><b id="sCalled">0</b><span>CALLED</span></div>
+          <div class="stat"><b id="sLeft">75</b><span>LEFT</span></div>
+        </div>
+
+        <p class="history-label">RECENT DRAWS</p>
+        <div class="history" id="history"></div>
+      </section>
+    </div>
+
+    <p class="footer">Tap any number to mark it manually</p>
+  </div>
+
+<script>
+  const KEY = "bingo:arcade";
+  const MAX = 75;
+  let called = [];
+  let manual = new Set();
+  let muted = false;
+  let rollTimer = null;
+  const $ = id => document.getElementById(id);
+  const calledSet = () => new Set([...called, ...manual]);
+
+  const LETTERS = ["B", "I", "N", "G", "O"];
+  const letterOf = n => LETTERS[Math.floor((n - 1) / 15)]; // 1-15→B, 16-30→I, …
+  const label = n => letterOf(n) + "-" + n;                // e.g. "B-12"
+
+  function buildBulbs() {
+    const box = $("bulbs"); box.innerHTML = "";
+    const N = 28;
+    for (let i = 0; i < N; i++) {
+      const b = document.createElement("i");
+      const t = i / N;                 // position around perimeter
+      let x, y;
+      if (t < 0.25)      { x = t * 4;            y = 0; }
+      else if (t < 0.5)  { x = 1;                y = (t - 0.25) * 4; }
+      else if (t < 0.75) { x = 1 - (t - 0.5) * 4; y = 1; }
+      else               { x = 0;                y = 1 - (t - 0.75) * 4; }
+      b.style.left = (x * 100) + "%";
+      b.style.top  = (y * 100) + "%";
+      b.style.animationDelay = (i * 0.05) + "s";
+      box.appendChild(b);
+    }
+  }
+
+  function buildBoard() {
+    $("boardHead").innerHTML = LETTERS.map((l, i) => `<div class="bh c${i}">${l}</div>`).join("");
+    const b = $("board"); b.innerHTML = "";
+    // 5 lettered columns × 15 rows; CSS grid fills row-major
+    for (let r = 0; r < 15; r++) {
+      for (let col = 0; col < 5; col++) {
+        const n = col * 15 + r + 1;
+        const c = document.createElement("div");
+        c.className = "cell"; c.id = "cell" + n; c.textContent = n;
+        c.onclick = () => toggleManual(n);
+        b.appendChild(c);
+      }
+    }
+  }
+  function toggleManual(n) {
+    if (called.includes(n)) called = called.filter(x => x !== n);
+    else if (manual.has(n)) manual.delete(n);
+    else manual.add(n);
+    render(); save();
+  }
+
+  function draw() {
+    const taken = calledSet(); const pool = [];
+    for (let n = 1; n <= MAX; n++) if (!taken.has(n)) pool.push(n);
+    if (!pool.length || rollTimer) return;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+
+    // slot-machine roll, then settle
+    $("display").classList.add("run");
+    $("drawBtn").disabled = true;
+    let ticks = 0;
+    sound(true);
+    rollTimer = setInterval(() => {
+      const r = pool[Math.floor(Math.random() * pool.length)];
+      $("dispLetter").textContent = letterOf(r);
+      $("bigNum").textContent = r;
+      $("bigNum").classList.remove("tick"); void $("bigNum").offsetWidth; $("bigNum").classList.add("tick");
+      if (++ticks > 12) {
+        clearInterval(rollTimer); rollTimer = null;
+        $("display").classList.remove("run");
+        called.push(pick);
+        render(); settleFx(pick); sound(false);
+      }
+    }, 70);
+  }
+
+  function undo() { if (rollTimer || !called.length) return; called.pop(); render(); save(); }
+  function resetGame() { if (rollTimer) return; called = []; manual.clear(); $("bigNum").textContent = "--"; $("dispLetter").textContent = ""; render(); save(); }
+
+  function render() {
+    const taken = calledSet();
+    for (let n = 1; n <= MAX; n++) {
+      const c = $("cell" + n);
+      c.classList.toggle("called", taken.has(n));
+      c.classList.remove("justdrawn");
+    }
+    const last = called[called.length - 1];
+    $("sLast").textContent = last != null ? label(last) : "--";
+    $("sCalled").textContent = taken.size;
+    $("sLeft").textContent = MAX - taken.size;
+    if (last != null && !rollTimer) {
+      $("dispLetter").textContent = letterOf(last);
+      $("bigNum").textContent = last;
+      $("display").classList.remove("empty");
+    }
+
+    const h = $("history"); h.innerHTML = "";
+    [...called].slice(-10).reverse().forEach(n => {
+      const chip = document.createElement("div"); chip.className = "chip"; chip.textContent = letterOf(n) + n; h.appendChild(chip);
+    });
+
+    const full = taken.size >= MAX;
+    $("drawBtn").disabled = full || !!rollTimer;
+    if (full) { $("display").classList.add("empty"); $("dispLetter").textContent = ""; $("bigNum").textContent = "GAME OVER"; }
+  }
+
+  function settleFx(pick) {
+    const cell = $("cell" + pick);
+    cell.classList.remove("justdrawn"); void cell.offsetWidth; cell.classList.add("justdrawn");
+    confetti(); save();
+  }
+
+  let audioCtx;
+  function sound(rolling) {
+    if (muted) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const t0 = audioCtx.currentTime;
+      if (rolling) {
+        // arcade ascending blips
+        for (let i = 0; i < 8; i++) {
+          const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+          o.type = "square"; o.frequency.value = 240 + i * 40;
+          o.connect(g); g.connect(audioCtx.destination);
+          const t = t0 + i * 0.09;
+          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+          o.start(t); o.stop(t + 0.07);
+        }
+      } else {
+        // win jingle
+        [523, 659, 784, 1046].forEach((f, i) => {
+          const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+          o.type = "square"; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
+          const t = t0 + i * 0.08;
+          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.1, t + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+          o.start(t); o.stop(t + 0.2);
+        });
+      }
+    } catch (e) {}
+  }
+  function toggleMute() { muted = !muted; $("muteBtn").textContent = muted ? "🔇 MUTED" : "🔊 SOUND"; }
+
+  function confetti() {
+    const colors = ["#ff3b3b", "#ffd400", "#2bd1ff", "#ff4fa3", "#7CFC00"];
+    for (let i = 0; i < 28; i++) {
+      const c = document.createElement("div"); c.className = "confetti";
+      c.style.left = Math.random() * 100 + "vw"; c.style.background = colors[i % colors.length];
+      c.style.animation = `fall ${1 + Math.random() * 0.8}s linear forwards`;
+      c.style.animationDelay = Math.random() * 0.2 + "s";
+      document.body.appendChild(c); setTimeout(() => c.remove(), 2200);
+    }
+  }
+
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ called, manual: [...manual] })); } catch (e) {} }
+  function load() {
+    try {
+      const d = JSON.parse(localStorage.getItem(KEY) || "{}");
+      if (Array.isArray(d.called)) called = d.called;
+      if (Array.isArray(d.manual)) manual = new Set(d.manual);
+    } catch (e) {}
+  }
+
+  buildBulbs(); buildBoard(); load(); render();
+</script>
+</body>
+</html>
